@@ -1,0 +1,23 @@
+# TasteApp Agent Notes
+
+## Project Shape
+
+TasteApp is a TypeScript-first pnpm workspace. Keep product language aligned with `CONTEXT.md` and keep durable architecture decisions in `docs/adr/`.
+
+## Local Commands
+
+- `pnpm install`: install workspace dependencies.
+- `pnpm run lint`: run ESLint.
+- `pnpm run typecheck`: run TypeScript without emitting files.
+- `pnpm run format`: format the repo with Prettier.
+- `pnpm run format:check`: verify formatting in CI.
+- `pnpm run test`: run Vitest.
+- `pnpm run build`: compile TypeScript.
+- `pnpm run check`: run formatting, lint, typecheck, tests, and build.
+
+## Delivery Rules
+
+- Work from short-lived branches and merge through pull requests into `main`.
+- Keep `main` deployable and protected by the required CI status checks documented in `docs/delivery/workflow.md`.
+- Do not add app, API, or infrastructure frameworks without recording or updating the relevant ADR.
+- Prefer vertical slices that keep domain behavior testable at bounded-context or application-service boundaries.
