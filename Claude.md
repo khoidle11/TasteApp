@@ -10,6 +10,7 @@ purpose: Provide comprehensive project context for AI agents working on the Tast
 TasteApp is a dish-first food review app that helps people find the best place for a specific dish, rather than ranking restaurants as monoliths. The product centers on canonical dishes, restaurant-specific menu items, dish reviews, and dish-quality rankings.
 
 **Key Product Philosophy:**
+
 - Food quality is the default truth
 - Restaurants are not ranked as monoliths; specific dishes at specific locations earn their own reputation
 - Service, ambiance, convenience, and popularity can matter, but should be explicit user-controlled factors
@@ -20,9 +21,11 @@ TasteApp is a dish-first food review app that helps people find the best place f
 ## Branch Naming Convention
 
 When creating branches for Linear issues, use the format:
+
 ```
 feat-XXXX
 ```
+
 Where `XXXX` is the Linear issue identifier (e.g., `feat-TST-34`).
 
 Note: Git does not allow parentheses in branch names, so use the format `feat-XXXX` rather than `(feat): XXXX`.
@@ -30,10 +33,41 @@ Note: Git does not allow parentheses in branch names, so use the format `feat-XX
 ## Commit Message Convention
 
 When committing changes for Linear issues, use the format:
+
 ```
 XXXX: <issue title>
 ```
+
 Where `XXXX` is the Linear issue identifier and `<issue title>` is the full issue title (e.g., `TST-34: Create Claude.md/Agent.md`).
+
+## Pull Request Description Convention
+
+Every pull request for Linear work should link back to the Linear issue in the PR description. Use the full Linear URL, not only the issue key, so Linear and future readers can reliably connect the PR to the source ticket.
+
+For this branch:
+
+```md
+Linear: https://linear.app/khoile11/issue/TST-34/create-claudemdagentmd
+```
+
+PR descriptions should include:
+
+- **Linear**: full issue URL.
+- **Summary**: what changed and why.
+- **Testing**: commands run, manual verification, or `Not run` with a reason when testing does not apply.
+- **SWE checklist**: 4-5 checkboxes covering good engineering practice for the change.
+
+Suggested PR checklist:
+
+```md
+## SWE checklist
+
+- [ ] Scope stays aligned with the linked Linear issue.
+- [ ] Product/domain language matches `CONTEXT.md`.
+- [ ] Durable architecture decisions are documented or do not require an ADR.
+- [ ] Relevant tests or checks were run, or the PR explains why they were not applicable.
+- [ ] User-facing behavior, docs, and follow-up risks are called out clearly.
+```
 
 ## Domain Language
 
@@ -104,6 +138,7 @@ Where `XXXX` is the Linear issue identifier and `<issue title>` is the full issu
 ## Tech Stack
 
 **Planned MVP stack:**
+
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Mobile:** Expo React Native + TypeScript
 - **Web:** Next.js + TypeScript
@@ -118,6 +153,7 @@ Where `XXXX` is the Linear issue identifier and `<issue title>` is the full issu
 - **Testing:** API integration tests against a real test database, plus context/domain tests
 
 **Planned later stack additions:**
+
 - S3 signed uploads for review photos
 - Dedicated search service evaluation, including Lucene/Nrtsearch-style indexing
 - AI services for query understanding, review highlights, canonicalization, and recommendations
@@ -136,6 +172,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 - `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
 
 **Key decisions:**
+
 - Use pnpm workspaces and Turborepo.
 - Use DDD bounded contexts for backend modularity.
 - Use PostgreSQL with code-first Prisma migrations.
@@ -201,6 +238,7 @@ The first usable MVP should include:
 Good tests should verify external behavior and product outcomes rather than internal implementation details. The highest-value seam for the MVP is the API behavior against a real test database because that validates the domain model, validation, persistence, ranking, and product flows without coupling tests to UI internals.
 
 **Key testing areas:**
+
 - API integration tests should cover account-required flows, restaurant creation, dish creation, restaurant-dish linking, review creation, search, ranking, saved items, moderation state changes, and entitlement checks.
 - Context tests should exercise application use cases at each Bounded Context boundary without reaching through adapters or testing implementation details.
 - Domain behavior tests should cover encapsulated business rules in TypeScript, not database stored procedure behavior.

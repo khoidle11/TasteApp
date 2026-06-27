@@ -19,5 +19,7 @@ TasteApp is a TypeScript-first pnpm workspace. Keep product language aligned wit
 
 - Work from short-lived branches and merge through pull requests into `main`.
 - Keep `main` deployable and protected by the required CI status checks documented in `docs/delivery/workflow.md`.
+- For Linear work, include the full Linear issue URL in the pull request description. For TST-34, use `https://linear.app/khoile11/issue/TST-34/create-claudemdagentmd`.
+- Pull request descriptions should include a summary, a testing section when applicable, and a 4-5 item SWE checklist covering scope, domain language, ADR impact, validation, and user-facing risks.
 - Do not add app, API, or infrastructure frameworks without recording or updating the relevant ADR.
 - Prefer vertical slices that keep domain behavior testable at bounded-context or application-service boundaries.
