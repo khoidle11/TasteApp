@@ -27,6 +27,14 @@ Where `XXXX` is the Linear issue identifier (e.g., `feat-TST-34`).
 
 Note: Git does not allow parentheses in branch names, so use the format `feat-XXXX` rather than `(feat): XXXX`.
 
+## Commit Message Convention
+
+When committing changes for Linear issues, use the format:
+```
+XXXX: <issue title>
+```
+Where `XXXX` is the Linear issue identifier and `<issue title>` is the full issue title (e.g., `TST-34: Create Claude.md/Agent.md`).
+
 ## Domain Language
 
 **Canonical Dish**: A reusable food concept that can be served by many restaurants (e.g., tonkotsu ramen, birria tacos, tiramisu). Avoid: Dish, generic dish, dish category
