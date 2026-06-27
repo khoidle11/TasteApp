@@ -53,11 +53,47 @@ Linear: https://linear.app/khoile11/issue/TST-34/create-claudemdagentmd
 PR descriptions should include:
 
 - **Linear**: full issue URL.
-- **Summary**: what changed and why.
-- **Testing**: commands run, manual verification, or `Not run` with a reason when testing does not apply.
+- **Summary**: 3-5 high-impact bullet points outlining exactly what changed and why.
+- **What I changed**: brief technical breakdown of the implementation or documentation changes.
+- **Test Plan**: step-by-step checklist or commands the reviewer can use to verify the change, such as test scripts, local run instructions, or deployment checks.
+- **Edge Cases Considered**: edge cases, regressions, or follow-up risks addressed by the change. For docs-only work, state the relevant scope limits instead of inventing runtime edge cases.
 - **SWE checklist**: 4-5 checkboxes covering good engineering practice for the change.
 
-Suggested PR checklist:
+Suggested PR description template:
+
+```md
+Linear: <full Linear issue URL>
+
+## Summary
+
+- <High-impact change and why it matters>
+- <High-impact change and why it matters>
+- <High-impact change and why it matters>
+
+## What I changed
+
+<Brief technical breakdown of the files, modules, flows, or docs changed.>
+
+## Test Plan
+
+- [ ] <Command or reviewer verification step>
+- [ ] <Manual or product verification step>
+
+## Edge Cases Considered
+
+- <Edge case, regression, or scope limit considered>
+- <Edge case, regression, or scope limit considered>
+
+## SWE checklist
+
+- [ ] Scope stays aligned with the linked Linear issue.
+- [ ] Product/domain language matches `CONTEXT.md`.
+- [ ] Durable architecture decisions are documented or do not require an ADR.
+- [ ] Relevant tests or checks were run, or the PR explains why they were not applicable.
+- [ ] User-facing behavior, docs, and follow-up risks are called out clearly.
+```
+
+Short checklist only:
 
 ```md
 ## SWE checklist
