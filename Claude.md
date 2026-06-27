@@ -44,10 +44,25 @@ Where `XXXX` is the Linear issue identifier and `<issue title>` is the full issu
 
 Every pull request for Linear work should link back to the Linear issue in the PR description. Use the full Linear URL, not only the issue key, so Linear and future readers can reliably connect the PR to the source ticket.
 
+Before opening a PR, confirm the repository host is connected in Linear workspace settings. Linear can only show native PR links when the GitHub integration is installed and authorized for the repository.
+
+Use the Linear issue ID consistently:
+
+- **Branch names**: include the issue ID anywhere in the branch name, such as `feat-TST-34` or `feature/TST-34-add-agent-context`.
+- **PR titles**: include the issue ID directly in the title, preferably bracketed, such as `[TST-34] Add agent context`.
+- **PR descriptions**: include the full Linear issue URL and a magic-word reference.
+- **Commit messages**: include the issue ID, and include a magic word when the commit should link or close an issue.
+
+Use magic words deliberately:
+
+- To link without changing issue status on merge, prefer `Related to TST-34` or `Refs TST-34`.
+- To close the issue automatically on merge, use `Fixes TST-34`, `Closes TST-34`, or `Resolves TST-34` only when that behavior is intended.
+
 For this branch:
 
 ```md
 Linear: https://linear.app/khoile11/issue/TST-34/create-claudemdagentmd
+Related to TST-34
 ```
 
 PR descriptions should include:
@@ -63,6 +78,7 @@ Suggested PR description template:
 
 ```md
 Linear: <full Linear issue URL>
+Related to <issue ID>
 
 ## Summary
 
