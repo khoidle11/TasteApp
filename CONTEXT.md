@@ -56,6 +56,10 @@ _Avoid_: Verified reviewer, trusted user
 The local product profile linked to an external authentication identity. TasteApp User owns reviews, saved items, profile gamification, moderation history, and contributor activity inside TasteApp.
 _Avoid_: Clerk user, account
 
+**Saved Item**:
+A Canonical Dish, Restaurant, RestaurantDish, or other discoverable product object saved by a TasteApp User for later return. Saved Items are user-owned shortcuts, not ranking inputs.
+_Avoid_: Favorite, bookmark
+
 **Bounded Context**:
 A coherent domain area with its own language, rules, and ownership boundary. TasteApp should use Bounded Contexts to keep review, discovery, moderation, identity, and monetization concerns from collapsing into one large application model.
 _Avoid_: Module, folder
@@ -116,6 +120,10 @@ _Avoid_: Distance ranking, nearby mode
 A Restaurant, Location, Canonical Dish, Menu Item, RestaurantDish, or Dish Review created by a user. User Submissions are accepted quickly but should not be treated as verified product truth by default.
 _Avoid_: User data, crowd data
 
+**Catalog Contribution**:
+A user-facing flow for creating or correcting Restaurants, Locations, Canonical Dishes, Menu Items, or RestaurantDishes. Catalog Contributions create User Submissions and should remain lighter-weight than moderator review workflows.
+_Avoid_: Admin edit, data entry
+
 **Verification State**:
 The trust state of a User Submission, such as unverified, AI-suggested, verified, rejected, or merged.
 _Avoid_: Status, moderation status
@@ -131,3 +139,7 @@ _Avoid_: AI verification, auto-verification
 **Submission Nudge**:
 A lightweight user-facing suggestion shown while a user creates a User Submission, such as "Did you mean tonkotsu ramen?". Submission Nudges help prevent duplicates without exposing internal verification confidence, merge queues, or moderation decisions.
 _Avoid_: AI warning, verification prompt
+
+**Report**:
+A user-submitted signal that a Dish Review, Restaurant, Location, Canonical Dish, Menu Item, or RestaurantDish may be incorrect, harmful, duplicate, or low quality. Reports feed moderation and Review Integrity workflows but are not moderation decisions by themselves.
+_Avoid_: Flag, complaint
