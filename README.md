@@ -118,6 +118,37 @@ Key decisions:
 - [PRD and product plan](./plan.md)
 - [Domain glossary](./CONTEXT.md)
 - [Architecture Decision Records](./docs/adr)
+- [Delivery workflow](./docs/delivery/workflow.md)
+- [Agent and developer setup notes](./AGENTS.md)
+
+## Local Development
+
+Prerequisites:
+
+- Node.js 20 or newer
+- Corepack enabled with `corepack enable`
+- pnpm 9
+
+Setup:
+
+```bash
+pnpm install
+pnpm run check
+```
+
+Useful commands:
+
+- `pnpm run lint`: run ESLint.
+- `pnpm run typecheck`: run TypeScript without emitting files.
+- `pnpm run format`: format the repo with Prettier.
+- `pnpm run format:check`: verify formatting.
+- `pnpm run test`: run Vitest.
+- `pnpm run build`: compile TypeScript.
+- `pnpm run check`: run the full local quality gate.
+
+## Delivery Workflow
+
+`main` is the default branch. Work should land through pull requests with the CI job `Install, lint, typecheck, test, and build` required before merge. Branch protection and required status checks are documented in [Delivery workflow](./docs/delivery/workflow.md).
 
 ## Software Leads
 
