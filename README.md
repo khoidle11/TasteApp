@@ -120,6 +120,7 @@ Key decisions:
 - [PRD and product plan](./plan.md)
 - [Domain glossary](./CONTEXT.md)
 - [Architecture Decision Records](./docs/adr)
+- [Legal policy scaffolds](./docs/legal)
 - [Delivery workflow](./docs/delivery/workflow.md)
 - [Agent and developer setup notes](./AGENTS.md)
 
