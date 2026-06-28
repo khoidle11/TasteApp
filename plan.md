@@ -16,7 +16,7 @@ Core stack decisions:
 
 - Mobile app: Expo React Native with TypeScript.
 - Web app: Next.js with TypeScript.
-- API: TypeScript backend with GraphQL as the main client API.
+- API: TypeScript backend with tRPC or typed REST as the MVP client API.
 - Database: PostgreSQL with Prisma.
 - Local infrastructure: Docker from day one.
 - Production cloud: AWS, starting with S3 and RDS Postgres.
@@ -43,7 +43,7 @@ Core stack decisions:
 - Architecture style: use domain-driven design, bounded contexts, and modular application boundaries so TasteApp remains readable, scalable, and testable as the product grows.
 - Object-oriented design: use encapsulation and polymorphism where they clarify domain behavior. Use inheritance sparingly; prefer composition unless a true domain hierarchy appears.
 - Monorepo tooling: use pnpm workspaces and Turborepo for package management, task orchestration, and caching.
-- API framework: use Fastify with GraphQL as the main client API. Keep REST only for operational endpoints such as health checks, webhooks, auth callbacks, and file upload signing.
+- API style: use a typed API layer, favoring tRPC or typed REST for MVP. Keep product behavior in application services so REST, tRPC, or future GraphQL remain replaceable delivery layers.
 
 ## User Stories
 
@@ -134,12 +134,12 @@ Core stack decisions:
 - Do not start with SwiftUI for the MVP. Keep Swift/SwiftUI as a later native enhancement path after the core product, API, and ranking model have traction.
 - Use Next.js with TypeScript for the web app because public dish and restaurant pages should be SEO-friendly and monetization/landing pages should be natural to build.
 - Use a TypeScript API as the main backend because it keeps the app, web, API, schemas, validation, and tests in one language family for solo-development speed.
-- Use Fastify for the API framework and expose the main mobile/web client API through GraphQL.
-- Use REST only for simple operational endpoints such as health checks, webhooks, auth callbacks, and file upload signing.
-- Use GraphQL Code Generator for typed client/server contracts shared by mobile, web, and API development.
-- Keep GraphQL resolvers thin: validate and authorize at the boundary, call bounded-context application use cases, map results to the GraphQL schema, and return.
-- Do not put domain decisions, ranking logic, verification workflows, review-integrity rules, or AI recommendation logic directly in controllers, route handlers, or GraphQL resolvers. Those belong in bounded-context application services and domain modules.
-- Add GraphQL guardrails early: cursor pagination for lists, query depth/complexity limits, auth checks at resolver/use-case boundaries, and batching/data-loader patterns to prevent N+1 database queries.
+- Use tRPC or typed REST for the MVP client API because TasteApp is TypeScript-first and AI-dev driven; the compiler, explicit DTOs, and Zod schemas should catch contract drift for agents.
+- Use REST-style route handlers where they are simpler for public pages, operational endpoints, health checks, webhooks, auth callbacks, and future upload signing.
+- Use Zod schemas plus TypeScript DTOs/view models for typed client/server contracts shared by mobile, web, and API development. Add OpenAPI only if REST client generation becomes useful.
+- Keep API handlers, tRPC procedures, REST handlers, and any future GraphQL resolvers thin: validate and authorize at the boundary, call bounded-context application use cases, map results to the client-facing DTO/schema, and return.
+- Do not put domain decisions, ranking logic, verification workflows, review-integrity rules, or AI recommendation logic directly in controllers, route handlers, tRPC procedures, or GraphQL resolvers. Those belong in bounded-context application services and domain modules.
+- Defer GraphQL until multi-client data composition becomes valuable enough to justify resolver, caching, auth, and query-complexity overhead. If GraphQL is introduced later, add cursor pagination, query depth/complexity limits, auth checks at resolver/use-case boundaries, and batching/data-loader patterns before the schema grows.
 - Avoid generic Manager classes as a default naming pattern. Prefer use cases, application services, domain services, policies, repositories, and adapters with names that describe the actual domain responsibility.
 - Keep business logic in the TypeScript codebase, not in database stored procedures. The database should enforce integrity constraints and persistence, while domain decisions live in bounded-context code.
 - Use Clerk for MVP authentication. The API should map Clerk identities to local TasteApp Users, and Dish Review creation requires a signed-in TasteApp User.
@@ -147,7 +147,7 @@ Core stack decisions:
 - Organize backend code around Bounded Contexts rather than database tables or HTTP routes. Initial contexts should be Identity, Catalog, Reviews, Discovery, Moderation, and Monetization.
 - Keep domain rules inside context-level application services/use cases, with HTTP handlers, Prisma access, Clerk integration, and external APIs treated as adapters.
 - Prefer clear module boundaries and explicit interfaces over shared global utilities. Shared packages should contain cross-context contracts and primitives only when multiple contexts genuinely need them.
-- Use GraphQL as an API query layer, not as a PostgreSQL replacement. PostgreSQL stores data; GraphQL composes client-facing reads and mutations across bounded contexts.
+- Treat the API as a replaceable delivery layer, not the domain model. PostgreSQL stores product data; application services own product behavior; tRPC, REST, or future GraphQL compose client-facing reads and mutations across bounded contexts.
 - Use PostgreSQL as the source-of-truth database for users, restaurants, locations, dishes, restaurant-dish links, reviews, ratings, saved items, moderation state, subscription entitlements, and analytics-friendly product events.
 - Use Prisma for database migrations and typed database access. Prisma models are persistence infrastructure, not the domain model; domain rules should live in bounded-context application/domain modules.
 - Use code-first Prisma schema and migrations for database evolution. Schema changes should be reviewed as code, then applied through migrations rather than manual database-first edits.
@@ -236,10 +236,10 @@ Testing decisions:
 - API integration tests should cover account-required flows, restaurant creation, dish creation, restaurant-dish linking, review creation, search, ranking, saved items, moderation state changes, and entitlement checks.
 - Context tests should exercise application use cases at each Bounded Context boundary without reaching through adapters or testing implementation details.
 - Domain behavior tests should cover encapsulated business rules in TypeScript, not database stored procedure behavior.
-- GraphQL resolver tests should verify schema wiring, authorization, and resolver-to-use-case mapping, while domain/application tests should cover business behavior without requiring Fastify or GraphQL execution.
-- GraphQL performance tests should cover pagination and prevent obvious N+1 query regressions on dish ranking and review-list queries.
-- GraphQL security tests should verify unauthorized users cannot access private profile, moderation, entitlement, or mutation paths.
-- REST endpoint tests should cover operational endpoints such as health checks, webhooks, auth callbacks, and file upload signing.
+- API handler/procedure tests should verify transport wiring, authorization, validation, and handler-to-use-case mapping, while domain/application tests should cover business behavior without requiring the HTTP or API transport.
+- API performance tests should cover pagination/list limits and prevent obvious N+1 query regressions on dish ranking and review-list queries.
+- API security tests should verify unauthorized users cannot access private profile, moderation, entitlement, or mutation paths.
+- REST endpoint tests should cover public/operational endpoints such as public SEO page data, health checks, webhooks, auth callbacks, and future file upload signing.
 - Shared schema tests should verify request/response validation and API contract compatibility.
 - Mobile journey tests should cover sign-in, dish search, review creation, dish detail, and saved dishes.
 - Web smoke tests should cover public landing pages, dish pages, restaurant pages, and SEO metadata.
@@ -281,11 +281,11 @@ Testing decisions:
 - Review Photo upload and public image display in the first MVP.
 - Native SwiftUI-only implementation.
 - Swift/SwiftUI mobile implementation in the first MVP.
-- REST/OpenAPI as the main client API.
+- GraphQL as the main client API in the first MVP.
 
 ## Further Notes
 
-GraphQL should be understood as an API layer, not a database. PostgreSQL stores the product data. GraphQL sits between mobile/web clients and bounded-context application services so clients can request graph-shaped TasteApp data without owning backend composition logic.
+The API should be understood as a delivery layer, not the domain model or database. PostgreSQL stores product data. Bounded-context application services own product behavior. tRPC or typed REST should expose MVP use cases through explicit DTOs and Zod validation; GraphQL can be added later only if flexible multi-client graph-shaped reads become valuable enough to outweigh agent-execution and operational complexity.
 
 Yelp can use Python heavily because large companies are polyglot and can afford specialized services for backend, data, ML, and search. TasteApp should start simpler: TypeScript for mobile, web, and API; Python only later if AI/data complexity warrants it.
 
