@@ -342,13 +342,14 @@ The first usable MVP should include:
 - Dish Review creation with structured food-quality inputs.
 - Canonical Dish search.
 - RestaurantDish ranking pages.
+- Group Dish Match for two or more selected Canonical Dishes, using explicit dish-quality rankings rather than open-ended AI recommendations.
 - Distance filters and list-first results with distance labels.
 - Emerging labels for low-sample rankings.
 - Basic report and moderation flows.
 - Docker-based local development.
 - API integration tests against a real test database.
 
-**Not in MVP:** AI recommendations, profile badges, photo upload, premium subscriptions, claimed restaurant tools, Food Crawl planning, repeat-visit review layers, map-heavy UI, dedicated search infrastructure, Kubernetes, and analytics warehouse workflows.
+**Not in MVP:** open-ended AI recommendations, profile badges, photo upload, premium subscriptions, claimed restaurant tools, Food Crawl planning, repeat-visit review layers, map-heavy UI, dedicated search infrastructure, Kubernetes, and analytics warehouse workflows.
 
 ## Important Constraints
 
@@ -358,6 +359,7 @@ The first usable MVP should include:
 - **Verification:** User submissions start unverified, with AI-assisted duplicate detection and verification workflows. AI suggestions do not automatically verify records.
 - **Chain Detection:** Flag a Restaurant as a chain candidate when it has multiple Locations within a 50-mile radius; use that flag to keep Menu Item quality location-aware.
 - **Distance Handling:** Distance can filter the listings shown, but default rankings remain food-quality-first. Convenience Mode can prioritize nearby options while still displaying each listing's original food-quality rank.
+- **Group Dish Match:** MVP includes a bounded deterministic match where users select two or more Canonical Dishes and see Restaurants or Locations where all selected dishes have strong dish-specific evidence. This should not become a black-box AI recommendation or a generic restaurant-wide score.
 - **Location UX:** MVP is list-first with distance labels, not map-first. Store latitude/longitude for Locations, cache geocoding results, and defer map-heavy UI to Phase 2.
 - **Ranking Confidence:** Show rankings immediately, but label RestaurantDishes with fewer than five Dish Reviews as Emerging in the MVP. Treat the threshold as configurable so it can scale with product growth.
 - **Review Trust:** Do not require proof-of-visit in the MVP. Treat photos, recent visit claims, review history, account age, location check-ins, community reports, and contributor badges as post-MVP trust/gamification signals.

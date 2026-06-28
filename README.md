@@ -13,9 +13,10 @@ The long-term vision is a consumer food discovery platform that can answer quest
 - "Where is the best tonkotsu ramen near me?"
 - "Which place has the crispiest fried chicken within 10 miles?"
 - "What is the best value birria taco nearby?"
+- "Where can my friend and I get great pizza and fried chicken at the same place?"
 - "Plan a three-stop dumpling crawl."
 
-The MVP should stay narrower: search dishes, review dishes, rank restaurant-specific dishes, and preserve trust in the ranking model.
+The MVP should stay narrower: search dishes, review dishes, rank restaurant-specific dishes, match a small selected list of dishes to places that serve all of them well, and preserve trust in the ranking model.
 
 ## Product Direction
 
@@ -24,6 +25,7 @@ TasteApp ranks `RestaurantDish` entries: a specific restaurant/location's versio
 - Where is the best tonkotsu ramen near me?
 - Which location serves the best crispy chicken sandwich?
 - What is the best value birria taco within 10 miles?
+- Where can two people get both strong pizza and strong fried chicken without hiding either dish's rank?
 
 Default rankings are food-quality-first. Distance, service, ambiance, convenience, and other experience factors can be filters or optional modes, but they should not silently override food quality.
 
@@ -46,13 +48,14 @@ The first usable MVP should include:
 - Dish Review creation with structured food-quality inputs.
 - Canonical Dish search.
 - RestaurantDish ranking pages.
+- Group Dish Match for two or more selected Canonical Dishes, using explicit dish-quality rankings rather than open-ended AI recommendations.
 - Distance filters and list-first results with distance labels.
 - Emerging labels for low-sample rankings.
 - Basic report and moderation flows.
 - Docker-based local development.
 - API integration tests against a real test database.
 
-Not in MVP: AI recommendations, profile badges, photo upload, premium subscriptions, claimed restaurant tools, Food Crawl planning, repeat-visit review layers, map-heavy UI, dedicated search infrastructure, Kubernetes, and analytics warehouse workflows.
+Not in MVP: open-ended AI recommendations, profile badges, photo upload, premium subscriptions, claimed restaurant tools, Food Crawl planning, repeat-visit review layers, map-heavy UI, dedicated search infrastructure, Kubernetes, and analytics warehouse workflows.
 
 ## Tech Stack
 

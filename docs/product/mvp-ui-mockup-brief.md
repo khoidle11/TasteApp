@@ -17,9 +17,9 @@ Avoid describing the style as neumorphic. The target is not pressed-in controls 
 
 Create a mobile-first UI for TasteApp, a dish-first food ranking app. Use a playful glossy 3D skeuomorphic style with rounded cards, soft white surfaces, large dish hero objects, subtle food-pattern backgrounds, coral action buttons, warm highlights, and dark glossy feature panels. The product should feel fun, premium, and food-focused without becoming childish.
 
-The interface should center `RestaurantDish` rankings, not restaurant-wide ratings. Users search for a `Canonical Dish`, compare restaurant-specific versions of that dish, open a simple RestaurantDish detail page, review the dish through food-quality signals, save items, contribute missing catalog data, and report incorrect or harmful content.
+The interface should center `RestaurantDish` rankings, not restaurant-wide ratings. Users search for a `Canonical Dish`, compare restaurant-specific versions of that dish, match a small selected list of dishes to places where all of them are strong, open a simple RestaurantDish detail page, review the dish through food-quality signals, save items, contribute missing catalog data, and report incorrect or harmful content.
 
-Use clear everyday labels in the mockups. Avoid overly technical product language on screen. Domain language can guide the design, but the user-facing UI should say things like "Best ramen near you", "Review this dish", "Save", "Report", and "Add a missing dish".
+Use clear everyday labels in the mockups. Avoid overly technical product language on screen. Domain language can guide the design, but the user-facing UI should say things like "Best ramen near you", "Find a place for both", "Review this dish", "Save", "Report", and "Add a missing dish".
 
 ## Visual Ingredients
 
@@ -118,7 +118,25 @@ Clarification for "food-quality summary":
 
 This should not feel technical. It is a simple readable summary of the required Dish Review inputs: taste, value, portion, temperature, and ingredient quality. Example: "Loved for rich broth, strong value, and generous portions." Designers can show a few friendly score chips or short phrases instead of a complicated score breakdown.
 
-### 5. Create Dish Review
+### 5. Group Dish Match
+
+Purpose: help a small group find one Restaurant or Location where multiple selected dishes are all worth eating.
+
+This is the pizza-plus-fried-chicken moment: users should feel like they are picking cravings, not configuring an algorithm. The screen should still make tradeoffs obvious, especially when one dish is highly ranked and another is only Emerging.
+
+Needed screens:
+
+- Dish picker with two selected Canonical Dishes and an affordance to add another.
+- Match results for a combination such as "pizza + fried chicken".
+- Result card showing the place, distance, overall match label, and per-dish evidence.
+- Tradeoff state where a place is excellent for one dish but weaker or Emerging for another.
+- Empty or thin-data state with a path to add a missing dish at a place.
+
+Design guidance:
+
+Use plain labels such as "Best for both", "Great pizza, Emerging fried chicken", and "Missing fried chicken reviews". Do not show a black-box AI score. The interface can say "match" or "fit", but it should also show why.
+
+### 6. Create Dish Review
 
 Purpose: let a signed-in TasteApp User review one RestaurantDish with structured food signals.
 
@@ -137,7 +155,7 @@ Needed screens:
 - Relevant auxiliary prompt when applicable, such as crispiness for fried food or broth richness for ramen.
 - Review submitted confirmation returning to RestaurantDish Detail.
 
-### 6. Catalog Contribution
+### 7. Catalog Contribution
 
 Purpose: let users add missing food data without making the product feel like admin software.
 
@@ -157,7 +175,7 @@ Design guidance:
 
 Make this feel like helping the app learn, not filling out a database. Use short forms, one idea per screen, friendly nudges, and food-focused language.
 
-### 7. Saved Items
+### 8. Saved Items
 
 Purpose: give signed-in users a personal return path to dishes and restaurants.
 
@@ -173,7 +191,7 @@ Open question:
 
 Decide whether MVP Saved Items should include Canonical Dishes, or whether MVP should start with RestaurantDishes and Restaurants only.
 
-### 8. Restaurant Page
+### 9. Restaurant Page
 
 Purpose: show what a Restaurant is known for without turning TasteApp into restaurant-wide ratings.
 
@@ -189,7 +207,7 @@ Design guidance:
 
 Do not emphasize a restaurant-wide score. The strongest cards on the page should be RestaurantDishes.
 
-### 9. Report Flow
+### 10. Report Flow
 
 Purpose: let users report incorrect, harmful, duplicate, or low-quality content.
 
@@ -205,7 +223,7 @@ Design guidance:
 
 Keep this calm, trustworthy, and brief. A Report is a moderation signal, not an automatic punishment or removal.
 
-### 10. Web Public SEO Pages
+### 11. Web Public SEO Pages
 
 Purpose: let TasteApp acquire users from search engines while preserving the dish-first model.
 
@@ -228,6 +246,9 @@ flowchart TD
   B --> C["Canonical Dish Search Results"]
   C --> D["RestaurantDish Ranking Page"]
   D --> E["RestaurantDish Detail"]
+  C --> P["Group Dish Match"]
+  P --> E
+  P --> L
   E --> F["Create Dish Review"]
   E --> G["Report Flow"]
   E --> H["Saved Items"]
