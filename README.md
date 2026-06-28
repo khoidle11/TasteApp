@@ -61,8 +61,8 @@ Planned MVP stack:
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Mobile:** Expo React Native + TypeScript
 - **Web:** Next.js + TypeScript
-- **API:** Fastify + GraphQL
-- **GraphQL contracts:** GraphQL Code Generator
+- **API:** TypeScript API layer, favoring tRPC or typed REST for MVP
+- **API contracts:** Zod validation schemas plus TypeScript DTOs/view models
 - **Auth:** Clerk with email code plus Google/Apple login
 - **Database:** PostgreSQL
 - **ORM/migrations:** Prisma with code-first migrations
@@ -73,6 +73,7 @@ Planned MVP stack:
 
 Planned later stack additions:
 
+- GraphQL only if multi-client data composition becomes valuable enough to justify resolver, caching, auth, and query-complexity overhead
 - S3 signed uploads for review photos
 - Dedicated search service evaluation, including Lucene/Nrtsearch-style indexing
 - AI services for query understanding, review highlights, canonicalization, and recommendations
@@ -86,7 +87,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 
 - `apps/mobile`: Expo React Native mobile app.
 - `apps/web`: Next.js web app.
-- `apps/api`: Fastify backend with GraphQL as the main client API.
+- `apps/api`: TypeScript backend exposing typed REST or tRPC-style use-case endpoints for MVP.
 - `packages/shared`: shared contracts and primitives when genuinely cross-context.
 - `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
 
@@ -97,7 +98,8 @@ Key decisions:
 - Use PostgreSQL with code-first Prisma migrations.
 - Keep business logic in TypeScript, not stored procedures.
 - Use Clerk for MVP authentication.
-- Use GraphQL for mobile/web clients and REST only for operational endpoints.
+- Defer GraphQL for MVP unless a concrete screen/client need proves it is worth the agent-execution and operational complexity.
+- Keep the API transport replaceable by putting product behavior in application services, not handlers, routers, or resolvers.
 - Use Docker Compose for local development.
 - Use AWS CDK for the first AWS deployment.
 
@@ -105,7 +107,7 @@ Key decisions:
 
 - Prefer domain-driven design over table-driven or route-driven architecture.
 - Organize backend behavior around bounded contexts: Identity, Catalog, Reviews, Discovery, Moderation, and Monetization.
-- Keep GraphQL resolvers and REST handlers thin. They should call application use cases, not own business logic.
+- Keep API handlers, tRPC procedures, REST handlers, and any future GraphQL resolvers thin. They should call application use cases, not own business logic.
 - Keep business logic in TypeScript code, not database stored procedures.
 - Treat Prisma as persistence infrastructure, not the domain model.
 - Use encapsulation and polymorphism where they clarify domain behavior; prefer composition over inheritance unless a real domain hierarchy emerges.

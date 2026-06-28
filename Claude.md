@@ -23,12 +23,12 @@ TasteApp is a dish-first food review app that helps people find the best place f
 When creating branches for Linear issues, use the format:
 
 ```
-feat-XXXX
+feat-TST-123-short-title
 ```
 
-Where `XXXX` is the Linear issue identifier (e.g., `feat-TST-34`).
+Where `TST-123` is the Linear issue identifier and `short-title` is a lowercase hyphenated summary.
 
-Note: Git does not allow parentheses in branch names, so use the format `feat-XXXX` rather than `(feat): XXXX`.
+Note: Git does not allow parentheses in branch names, so use the format `feat-TST-123-short-title` rather than `(feat): TST-123`.
 
 ## Commit Message Convention
 
@@ -48,7 +48,7 @@ Before opening a PR, confirm the repository host is connected in Linear workspac
 
 Use the Linear issue ID consistently:
 
-- **Branch names**: include the issue ID anywhere in the branch name, such as `feat-TST-34` or `feature/TST-34-add-agent-context`.
+- **Branch names**: use `feat-TST-123-short-title`, such as `feat-TST-34-add-agent-context`.
 - **PR titles**: include the issue ID directly in the title, preferably bracketed, such as `[TST-34] Add agent context`.
 - **PR descriptions**: include the full Linear issue URL and a magic-word reference.
 - **Commit messages**: include the issue ID, and include a magic word when the commit should link or close an issue.
@@ -120,6 +120,90 @@ Short checklist only:
 - [ ] Relevant tests or checks were run, or the PR explains why they were not applicable.
 - [ ] User-facing behavior, docs, and follow-up risks are called out clearly.
 ```
+
+## AI-Driven Development Philosophy
+
+TasteApp is intentionally AI-dev driven. When evaluating complexity, do not only ask whether a human engineer can understand the system. Ask whether an AI coding agent can reliably modify, test, and reason about it from local context, and whether Khoi can clearly prompt the agent without first untangling hidden assumptions.
+
+Use this lens for every architecture, tool, and implementation tradeoff:
+
+- **AI execution complexity:** Is the code shape easy for an agent to inspect, change surgically, and verify without inventing missing context?
+- **Human prompt complexity:** Is the product or technical concept easy for Khoi to describe precisely enough that an AI agent can act on it?
+- **Domain complexity:** Is the complexity intrinsic to TasteApp's model, such as RestaurantDish identity, ranking truth, review integrity, or location-aware catalog data?
+- **Accidental complexity:** Is the complexity coming from a tool, framework, abstraction, or clever pattern that does not directly serve the MVP?
+
+Prefer choices that make agent work boring and verifiable: explicit types, narrow service boundaries, page-specific view models, clear validation schemas, concrete test commands, and issue-sized vertical slices. Avoid choices that require agents to infer hidden framework behavior, chase dynamic magic, or edit many distant files for one product change.
+
+When asked whether something is "hard," answer from both perspectives when relevant:
+
+- **For AI agents:** hard means ambiguous contracts, scattered business logic, implicit framework conventions, brittle code generation, weak tests, or changes that require global reasoning.
+- **For humans prompting AI:** hard means the concept is difficult to explain in a small, concrete task because the product language, acceptance criteria, or success checks are unclear.
+
+## Agent Behavioral Guidelines
+
+These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+### 1. Think Before Coding
+
+Do not assume. Do not hide confusion. Surface tradeoffs.
+
+Before implementing:
+
+- State assumptions explicitly.
+- If uncertain, ask.
+- If multiple interpretations exist, present them rather than picking silently.
+- If a simpler approach exists, say so.
+- Push back when warranted.
+- If something is unclear, stop, name what is confusing, and ask.
+
+### 2. Simplicity First
+
+Write the minimum code that solves the problem. Do not add speculative machinery.
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No flexibility or configurability that was not requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+- Ask: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### 3. Surgical Changes
+
+Touch only what you must. Clean up only your own mess.
+
+When editing existing code:
+
+- Do not improve adjacent code, comments, or formatting.
+- Do not refactor things that are not broken.
+- Match existing style, even if you would do it differently.
+- If you notice unrelated dead code, mention it instead of deleting it.
+
+When your changes create orphans:
+
+- Remove imports, variables, functions, and files that your changes made unused.
+- Do not remove pre-existing dead code unless asked.
+
+The test: every changed line should trace directly to the user's request.
+
+### 4. Goal-Driven Execution
+
+Define success criteria. Loop until verified.
+
+Transform tasks into verifiable goals:
+
+- "Add validation" means write tests for invalid inputs, then make them pass.
+- "Fix the bug" means write or identify a reproduction, then make it pass.
+- "Refactor X" means ensure relevant tests pass before and after.
+
+For multi-step tasks, state a brief plan:
+
+```md
+1. [Step] -> verify: [check]
+2. [Step] -> verify: [check]
+3. [Step] -> verify: [check]
+```
+
+Strong success criteria let agents loop independently. Weak criteria such as "make it work" require clarification before implementation.
 
 ## Domain Language
 
@@ -194,8 +278,8 @@ Short checklist only:
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Mobile:** Expo React Native + TypeScript
 - **Web:** Next.js + TypeScript
-- **API:** Fastify + GraphQL
-- **GraphQL contracts:** GraphQL Code Generator
+- **API:** TypeScript API layer, currently favoring tRPC or typed REST over GraphQL for MVP
+- **API contracts:** Zod schemas plus TypeScript DTOs/view models; OpenAPI only if REST generation becomes useful
 - **Auth:** Clerk with email code plus Google/Apple login
 - **Database:** PostgreSQL
 - **ORM/migrations:** Prisma with code-first migrations
@@ -206,6 +290,7 @@ Short checklist only:
 
 **Planned later stack additions:**
 
+- GraphQL only if multi-client data composition becomes valuable enough to justify resolver, caching, auth, and query-complexity overhead
 - S3 signed uploads for review photos
 - Dedicated search service evaluation, including Lucene/Nrtsearch-style indexing
 - AI services for query understanding, review highlights, canonicalization, and recommendations
@@ -219,7 +304,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 
 - `apps/mobile`: Expo React Native mobile app.
 - `apps/web`: Next.js web app.
-- `apps/api`: Fastify backend with GraphQL as the main client API.
+- `apps/api`: TypeScript backend exposing typed REST or tRPC-style use-case endpoints for MVP.
 - `packages/shared`: shared contracts and primitives when genuinely cross-context.
 - `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
 
@@ -231,7 +316,8 @@ TasteApp is planned as a TypeScript-first monorepo:
 - Keep business logic in TypeScript, not stored procedures.
 - Treat Prisma as persistence infrastructure, not the domain model.
 - Use Clerk for MVP authentication.
-- Use GraphQL for mobile/web clients and REST only for operational endpoints.
+- Defer GraphQL for MVP unless a concrete screen/client need proves it is worth the agent-execution and operational complexity.
+- Keep the API transport replaceable by putting product behavior in application services, not handlers, routers, or resolvers.
 - Use Docker Compose for local development.
 - Use AWS CDK for the first AWS deployment.
 
@@ -239,7 +325,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 
 - Prefer domain-driven design over table-driven or route-driven architecture.
 - Organize backend behavior around bounded contexts: Identity, Catalog, Reviews, Discovery, Moderation, and Monetization.
-- Keep GraphQL resolvers and REST handlers thin. They should call application use cases, not own business logic.
+- Keep API handlers, tRPC procedures, REST handlers, and any future GraphQL resolvers thin. They should call application use cases, not own business logic.
 - Keep business logic in TypeScript code, not database stored procedures.
 - Treat Prisma as persistence infrastructure, not the domain model.
 - Use encapsulation and polymorphism where they clarify domain behavior; prefer composition over inheritance unless a real domain hierarchy emerges.
@@ -294,6 +380,6 @@ Good tests should verify external behavior and product outcomes rather than inte
 - API integration tests should cover account-required flows, restaurant creation, dish creation, restaurant-dish linking, review creation, search, ranking, saved items, moderation state changes, and entitlement checks.
 - Context tests should exercise application use cases at each Bounded Context boundary without reaching through adapters or testing implementation details.
 - Domain behavior tests should cover encapsulated business rules in TypeScript, not database stored procedure behavior.
-- GraphQL resolver tests should verify schema wiring, authorization, and resolver-to-use-case mapping, while domain/application tests should cover business behavior without requiring Fastify or GraphQL execution.
+- API handler/procedure tests should verify transport wiring, authorization, validation, and handler-to-use-case mapping, while domain/application tests should cover business behavior without requiring the HTTP or API transport.
 - Ranking tests should verify that dish-specific review data drives dish rankings and that restaurant-level metadata does not override food-specific signals.
 - Distance tests should verify that distance filters narrow the result set without changing food-quality rank, and that Convenience Mode keeps food-quality rank visible when ordering by convenience.
