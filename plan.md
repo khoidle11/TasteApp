@@ -29,6 +29,7 @@ Core stack decisions:
 - AI verification visibility: internal confidence scores, duplicate queues, and merge decisions are moderator-facing; normal users only see lightweight submission nudges such as "Did you mean...?".
 - Chain detection: flag a Restaurant as a chain candidate when it has multiple Locations within a 50-mile radius; use that flag to keep Menu Item quality location-aware.
 - Distance handling: distance can filter the listings shown, but default rankings remain food-quality-first. Convenience Mode can prioritize nearby options while still displaying each listing's original food-quality rank.
+- Group Dish Match: MVP should let users select two or more Canonical Dishes, such as pizza plus fried chicken, and find Restaurants or Locations where every selected dish has strong dish-specific evidence. This is a bounded algorithmic match, not broad open-ended AI recommendations.
 - Location UX: MVP is list-first with distance labels, not map-first. Store latitude/longitude for Locations, cache geocoding results, and defer map-heavy UI to Phase 2.
 - Ranking confidence: show rankings immediately, but label RestaurantDishes with fewer than five Dish Reviews as Emerging in the MVP. Treat the threshold as configurable so it can scale with product growth.
 - Review trust: do not require proof-of-visit in the MVP. Treat photos, recent visit claims, review history, account age, location check-ins, community reports, and contributor badges as post-MVP trust/gamification signals.
@@ -36,7 +37,7 @@ Core stack decisions:
 - Restaurant owner boundary: Claimed Restaurants may correct factual menu/location/profile information later, but they must not control Dish Rankings or suppress Dish Reviews.
 - Review integrity: require accounts for review creation; require taste, value, portion, temperature, and ingredient quality inputs; support dish-specific auxiliary qualities; and design abuse controls for Coordinated Review Attacks.
 - Quality taxonomy: start with a small curated set of dish-specific auxiliary qualities. AI and trusted contributors can suggest additions, but approved prompts should remain controlled by the app.
-- MVP boundary: the first usable version includes accounts, core entity creation, structured Dish Reviews, Canonical Dish search, RestaurantDish rankings, distance filtering, Emerging labels, and basic reporting. AI, badges, photos, premium, claimed restaurants, repeat-visit review layers, and advanced search/data infrastructure belong to Phase 2 or later.
+- MVP boundary: the first usable version includes accounts, core entity creation, structured Dish Reviews, Canonical Dish search, RestaurantDish rankings, Group Dish Match for explicit selected dishes, distance filtering, Emerging labels, and basic reporting. Open-ended AI, badges, photos, premium, claimed restaurants, repeat-visit review layers, and advanced search/data infrastructure belong to Phase 2 or later.
 - Native iOS path: use Expo React Native for the MVP, but reserve Swift/SwiftUI for later iOS-native enhancements such as widgets, Apple Maps polish, Live Activities, haptics, native modules, or a future iOS-first rewrite if product traction justifies it.
 - Infrastructure as Code: MVP local development uses Docker Compose only. The first real AWS deployment should use AWS CDK with TypeScript; Terraform/OpenTofu remains a later alternative if cloud-agnostic infrastructure practice becomes a priority.
 - Authentication: use Clerk for MVP auth with email code plus Google/Apple login. Avoid SMS early to reduce cost; keep TasteApp profile, badge, moderation, and review data in the app database linked to Clerk identity.
@@ -51,72 +52,74 @@ Core stack decisions:
 2. As a food seeker, I want dish rankings to focus on food quality, so that service or ambiance does not dominate my decision.
 3. As a food seeker, I want to view a dish page, so that I can compare restaurants that serve that dish.
 4. As a food seeker, I want to view a restaurant page, so that I can see which dishes the restaurant is actually known for.
-5. As a food seeker, I want to filter by cuisine, location, price, and dietary preferences, so that I can narrow results to what I want right now.
-6. As a food seeker, I want to save dishes and restaurants, so that I can return to them later.
-7. As a food seeker, I want to see review highlights, so that I can quickly understand why people like or dislike a dish.
-8. As a food seeker, I want spell correction and dish name canonicalization, so that searches still work when I misspell or use alternate dish names.
-9. As a food seeker, I want AI dish recommendations, so that I can ask natural questions like "best spicy ramen near me".
-10. As a food seeker, I want to turn service, ambiance, popularity, and convenience factors on or off, so that I can decide when non-food experience matters.
-11. As a food seeker, I want default rankings to prioritize food quality signals, so that the app does not silently recreate restaurant-first ranking bias.
-12. As a food seeker, I want distance filters to narrow listings without changing their food-quality rank, so that I can see the best food inside my acceptable travel range.
-13. As a food seeker, I want Convenience Mode, so that I can prioritize closer options when ease matters more than absolute food quality.
-14. As a food seeker, I want Convenience Mode results to still show each listing's food-quality rank, so that I understand the tradeoff I am making.
-15. As a food seeker, I want list-first search results with clear distance labels, so that I can compare food quality before needing a map.
-16. As a product owner, I want geocoding results cached, so that location features do not create unnecessary API cost.
-17. As a food seeker, I want low-sample rankings labeled as Emerging, so that I do not over-trust a dish with only a few reviews.
-18. As a product owner, I want the Emerging threshold to be configurable, so that ranking confidence can scale as TasteApp grows.
-19. As a reviewer, I want to create an account, so that my reviews and saved items belong to me.
-20. As a reviewer, I want to add a restaurant, so that I can review food from places not yet in the app.
-21. As a reviewer, I want to add a canonical dish, so that the app can compare the same kind of food across restaurants.
-22. As a reviewer, I want to add a restaurant-specific menu item, so that reviews describe the actual food served by one restaurant.
-23. As a reviewer, I want to connect a restaurant-specific menu item to a canonical dish, so that search and ranking work at both levels.
-24. As a reviewer, I want to review a RestaurantDish, so that reviews are attached to a specific restaurant's version of a dish.
-25. As a reviewer, I want to rate taste, value, portion, temperature, and ingredient quality, so that MVP Dish Reviews capture food-specific signals.
-26. As a reviewer, I want dish-specific auxiliary quality prompts, so that fried foods can ask about crispiness while ice cream can ask about qualities that actually apply.
-27. As a repeat reviewer, I want second-or-later visits to unlock deeper review prompts, so that I can rate qualities like consistency that require multiple experiences.
-28. As a reviewer, I want to optionally rate service and ambiance separately, so that experience factors can exist without polluting default food rankings.
-29. As a reviewer, I want to leave written comments, so that I can explain my experience in more detail.
-30. As a reviewer, I want to upload photos later, so that dish pages have visual evidence.
-31. As a reviewer, I want to edit or delete my review, so that I can correct mistakes.
-32. As a reviewer, I want to report incorrect restaurants, dishes, or reviews, so that the app data stays trustworthy.
-33. As a reviewer, I want the app to flag restaurants with multiple nearby locations, so that I understand when a restaurant may behave like a chain.
-34. As a reviewer, I want to attach a photo later, so that my review can have a stronger trust signal.
-35. As a reviewer, I want to optionally indicate I visited recently later, so that freshness can become a trust signal.
-36. As a reviewer, I want future location check-ins to be optional, so that trust can improve without blocking MVP reviews.
-37. As a contributor, I want future profile badges to be free, so that helpful reviewing and reporting can fuel community growth.
-38. As a food seeker, I want core dish search, rankings, and reviews to stay free, so that I can trust and participate in the community before paying.
-39. As a premium user, I want paid features to improve discovery convenience, so that premium feels like extra power rather than hidden truth.
-40. As a premium user, I want a future Food Crawl planner, so that I can build multi-stop eating plans around ranked dishes, distance, hours, budget, and preferences.
-41. As a food seeker, I want chain locations to be ranked separately by dish quality, so that one strong location does not inflate another location's food ranking.
-42. As a moderator, I want new user-submitted restaurants, locations, canonical dishes, menu items, and restaurant-dish links to start unverified, so that messy input does not become trusted product truth immediately.
-43. As a moderator, I want AI-assisted duplicate and misspelling suggestions, so that I can identify merge candidates faster.
-44. As a moderator, I want a merge workflow for duplicate restaurants, locations, canonical dishes, menu items, and restaurant-dish links, so that the product can recover from messy user input.
-45. As a submitting user, I want lightweight "did you mean" suggestions, so that I can avoid creating accidental duplicates without learning internal moderation details.
-46. As a moderator, I want a queue of reported content, so that harmful or low-quality content can be reviewed.
-47. As a moderator, I want audit trails for moderation decisions, so that trust and safety actions are traceable.
-48. As a product owner, I want public web pages for dishes and restaurants, so that TasteApp can gain search-engine traffic.
-49. As a product owner, I want mobile apps for iOS and Android, so that users can discover and review food while out in the world.
-50. As a product owner, I want analytics events captured, so that product usage and search quality can be measured.
-51. As a product owner, I want subscription entitlements modeled early, so that premium AI features can be monetized later.
-52. As a product owner, I want AWS data exports, so that analytics and recommendation workflows can grow beyond the transactional database.
-53. As a developer, I want Docker-based local development, so that the app can run predictably from a clean checkout.
-54. As a developer, I want shared TypeScript schemas, so that mobile, web, and API contracts stay aligned.
-55. As a developer, I want API tests against a real test database, so that product behavior is validated at the highest useful seam.
-56. As a developer, I want the search system behind an interface, so that Postgres search can later be replaced or augmented by Lucene/Nrtsearch.
-57. As a developer, I want AI recommendation logic behind a service boundary, so that LLM features can evolve without rewriting the core API.
-58. As a developer, I want Kubernetes deferred until scale justifies it, so that the MVP avoids unnecessary operational complexity.
-59. As a data analyst, I want app events and review data exported to S3, so that Athena/Glue/warehouse workflows can analyze product behavior later.
-60. As a data analyst, I want search interaction data captured, so that query understanding and ranking quality can improve over time.
-61. As a premium user, I want AI-powered dish finding, so that paid features feel meaningfully better than basic search.
-62. As a premium user, I want personalized recommendations based on my taste profile, so that the app learns what I like.
-63. As a restaurant owner, I want to claim a Restaurant later, so that I can correct factual profile, Location, hours, and menu information.
-64. As a food seeker, I want Claimed Restaurants to be unable to suppress reviews or alter Dish Rankings, so that business tools do not undermine trust.
-65. As a reviewer, I want profiles and badges to make reviewing feel fun, so that account-based reviewing feels like a benefit instead of only a gate.
-66. As a reviewer, I want Dish Reviews to require structured Food Quality Signal inputs, so that reviews stay focused on the food.
-67. As a moderator, I want signals for Coordinated Review Attacks, so that suspicious bursts of reviews can be slowed, queued, or down-weighted.
-68. As a product owner, I want a curated Quality Taxonomy, so that auxiliary review prompts stay relevant and consistent.
-69. As a trusted contributor, I want to suggest new auxiliary qualities later, so that the review model can improve as the community discovers useful dish-specific signals.
-70. As a moderator, I want AI-suggested auxiliary qualities to require approval, so that the app avoids messy or irrelevant review prompts.
+5. As a food seeker planning with another person, I want to choose multiple dishes and find places where all of them are strong, so that one person can want pizza and another can want fried chicken without settling blindly.
+6. As a food seeker, I want Group Dish Match results to show the per-dish tradeoffs, so that a combined match does not hide that one dish is great and another is only Emerging.
+7. As a food seeker, I want to filter by cuisine, location, price, and dietary preferences, so that I can narrow results to what I want right now.
+8. As a food seeker, I want to save dishes and restaurants, so that I can return to them later.
+9. As a food seeker, I want to see review highlights, so that I can quickly understand why people like or dislike a dish.
+10. As a food seeker, I want spell correction and dish name canonicalization, so that searches still work when I misspell or use alternate dish names.
+11. As a food seeker, I want AI dish recommendations, so that I can ask natural questions like "best spicy ramen near me".
+12. As a food seeker, I want to turn service, ambiance, popularity, and convenience factors on or off, so that I can decide when non-food experience matters.
+13. As a food seeker, I want default rankings to prioritize food quality signals, so that the app does not silently recreate restaurant-first ranking bias.
+14. As a food seeker, I want distance filters to narrow listings without changing their food-quality rank, so that I can see the best food inside my acceptable travel range.
+15. As a food seeker, I want Convenience Mode, so that I can prioritize closer options when ease matters more than absolute food quality.
+16. As a food seeker, I want Convenience Mode results to still show each listing's food-quality rank, so that I understand the tradeoff I am making.
+17. As a food seeker, I want list-first search results with clear distance labels, so that I can compare food quality before needing a map.
+18. As a product owner, I want geocoding results cached, so that location features do not create unnecessary API cost.
+19. As a food seeker, I want low-sample rankings labeled as Emerging, so that I do not over-trust a dish with only a few reviews.
+20. As a product owner, I want the Emerging threshold to be configurable, so that ranking confidence can scale as TasteApp grows.
+21. As a reviewer, I want to create an account, so that my reviews and saved items belong to me.
+22. As a reviewer, I want to add a restaurant, so that I can review food from places not yet in the app.
+23. As a reviewer, I want to add a canonical dish, so that the app can compare the same kind of food across restaurants.
+24. As a reviewer, I want to add a restaurant-specific menu item, so that reviews describe the actual food served by one restaurant.
+25. As a reviewer, I want to connect a restaurant-specific menu item to a canonical dish, so that search and ranking work at both levels.
+26. As a reviewer, I want to review a RestaurantDish, so that reviews are attached to a specific restaurant's version of a dish.
+27. As a reviewer, I want to rate taste, value, portion, temperature, and ingredient quality, so that MVP Dish Reviews capture food-specific signals.
+28. As a reviewer, I want dish-specific auxiliary quality prompts, so that fried foods can ask about crispiness while ice cream can ask about qualities that actually apply.
+29. As a repeat reviewer, I want second-or-later visits to unlock deeper review prompts, so that I can rate qualities like consistency that require multiple experiences.
+30. As a reviewer, I want to optionally rate service and ambiance separately, so that experience factors can exist without polluting default food rankings.
+31. As a reviewer, I want to leave written comments, so that I can explain my experience in more detail.
+32. As a reviewer, I want to upload photos later, so that dish pages have visual evidence.
+33. As a reviewer, I want to edit or delete my review, so that I can correct mistakes.
+34. As a reviewer, I want to report incorrect restaurants, dishes, or reviews, so that the app data stays trustworthy.
+35. As a reviewer, I want the app to flag restaurants with multiple nearby locations, so that I understand when a restaurant may behave like a chain.
+36. As a reviewer, I want to attach a photo later, so that my review can have a stronger trust signal.
+37. As a reviewer, I want to optionally indicate I visited recently later, so that freshness can become a trust signal.
+38. As a reviewer, I want future location check-ins to be optional, so that trust can improve without blocking MVP reviews.
+39. As a contributor, I want future profile badges to be free, so that helpful reviewing and reporting can fuel community growth.
+40. As a food seeker, I want core dish search, rankings, and reviews to stay free, so that I can trust and participate in the community before paying.
+41. As a premium user, I want paid features to improve discovery convenience, so that premium feels like extra power rather than hidden truth.
+42. As a premium user, I want a future Food Crawl planner, so that I can build multi-stop eating plans around ranked dishes, distance, hours, budget, and preferences.
+43. As a food seeker, I want chain locations to be ranked separately by dish quality, so that one strong location does not inflate another location's food ranking.
+44. As a moderator, I want new user-submitted restaurants, locations, canonical dishes, menu items, and restaurant-dish links to start unverified, so that messy input does not become trusted product truth immediately.
+45. As a moderator, I want AI-assisted duplicate and misspelling suggestions, so that I can identify merge candidates faster.
+46. As a moderator, I want a merge workflow for duplicate restaurants, locations, canonical dishes, menu items, and restaurant-dish links, so that the product can recover from messy user input.
+47. As a submitting user, I want lightweight "did you mean" suggestions, so that I can avoid creating accidental duplicates without learning internal moderation details.
+48. As a moderator, I want a queue of reported content, so that harmful or low-quality content can be reviewed.
+49. As a moderator, I want audit trails for moderation decisions, so that trust and safety actions are traceable.
+50. As a product owner, I want public web pages for dishes and restaurants, so that TasteApp can gain search-engine traffic.
+51. As a product owner, I want mobile apps for iOS and Android, so that users can discover and review food while out in the world.
+52. As a product owner, I want analytics events captured, so that product usage and search quality can be measured.
+53. As a product owner, I want subscription entitlements modeled early, so that premium AI features can be monetized later.
+54. As a product owner, I want AWS data exports, so that analytics and recommendation workflows can grow beyond the transactional database.
+55. As a developer, I want Docker-based local development, so that the app can run predictably from a clean checkout.
+56. As a developer, I want shared TypeScript schemas, so that mobile, web, and API contracts stay aligned.
+57. As a developer, I want API tests against a real test database, so that product behavior is validated at the highest useful seam.
+58. As a developer, I want the search system behind an interface, so that Postgres search can later be replaced or augmented by Lucene/Nrtsearch.
+59. As a developer, I want AI recommendation logic behind a service boundary, so that LLM features can evolve without rewriting the core API.
+60. As a developer, I want Kubernetes deferred until scale justifies it, so that the MVP avoids unnecessary operational complexity.
+61. As a data analyst, I want app events and review data exported to S3, so that Athena/Glue/warehouse workflows can analyze product behavior later.
+62. As a data analyst, I want search interaction data captured, so that query understanding and ranking quality can improve over time.
+63. As a premium user, I want AI-powered dish finding, so that paid features feel meaningfully better than basic search.
+64. As a premium user, I want personalized recommendations based on my taste profile, so that the app learns what I like.
+65. As a restaurant owner, I want to claim a Restaurant later, so that I can correct factual profile, Location, hours, and menu information.
+66. As a food seeker, I want Claimed Restaurants to be unable to suppress reviews or alter Dish Rankings, so that business tools do not undermine trust.
+67. As a reviewer, I want profiles and badges to make reviewing feel fun, so that account-based reviewing feels like a benefit instead of only a gate.
+68. As a reviewer, I want Dish Reviews to require structured Food Quality Signal inputs, so that reviews stay focused on the food.
+69. As a moderator, I want signals for Coordinated Review Attacks, so that suspicious bursts of reviews can be slowed, queued, or down-weighted.
+70. As a product owner, I want a curated Quality Taxonomy, so that auxiliary review prompts stay relevant and consistent.
+71. As a trusted contributor, I want to suggest new auxiliary qualities later, so that the review model can improve as the community discovers useful dish-specific signals.
+72. As a moderator, I want AI-suggested auxiliary qualities to require approval, so that the app avoids messy or irrelevant review prompts.
 
 ## Implementation Decisions
 
@@ -162,10 +165,11 @@ Core stack decisions:
 - Put search behind a SearchService boundary so Lucene/Nrtsearch-inspired search can be introduced later.
 - Keep service, ambiance, popularity, convenience, and general restaurant sentiment as optional experience factors that users can include or exclude from ranking/filtering.
 - Treat distance as a filter by default rather than a food-quality ranking input. Convenience Mode may reorder listings by closeness, but should preserve visible food-quality rank in the interface.
+- Implement Group Dish Match as a Discovery application service that accepts explicit Canonical Dish selections and returns Restaurants or Locations with per-dish RestaurantDish evidence, confidence labels, and a deterministic Match Score. Do not use broad AI ranking for this MVP slice.
 - Keep MVP location UX list-first. Store latitude/longitude on Locations, cache geocoding results, and defer map-heavy UI until Phase 2.
 - Show Dish Rankings immediately, but label RestaurantDishes with fewer than five Dish Reviews as Emerging in the MVP. Store the confidence threshold as configuration rather than hard-coding it into the ranking model.
 - Evaluate Nrtsearch later because Yelp's open-source Nrtsearch is a high-performance gRPC server on Apache Lucene with S3-backed/stateless container deployment patterns.
-- Keep AI out of the MVP implementation but reserve a recommendation/query-understanding service boundary.
+- Keep open-ended AI out of the MVP implementation but reserve a recommendation/query-understanding service boundary. Group Dish Match is the exception only because it is a bounded deterministic matching algorithm over selected Canonical Dishes.
 - Add LLM features in Phase 2: query segmentation, spell correction, dish canonicalization, review highlights, and recommendation ranking.
 - Defer Kubernetes/EKS/operator-style infrastructure until service count, scaling needs, or search/indexing operations justify it.
 - Use Python later only if AI, recommendation, or data jobs become complex enough to deserve a separate service. The main product should remain TypeScript for speed and consistency.
@@ -194,6 +198,7 @@ The first usable MVP should include:
 - Dish Review creation with required taste, value, portion, temperature, and ingredient quality inputs.
 - Canonical Dish search.
 - RestaurantDish ranking pages.
+- Group Dish Match for two or more selected Canonical Dishes, with visible per-dish tradeoffs.
 - Distance filters that narrow listings without changing food-quality rank.
 - List-first results with distance labels.
 - Emerging labels for RestaurantDishes below the configured review threshold.
@@ -202,7 +207,7 @@ The first usable MVP should include:
 - Docker-based local development.
 - API integration tests against a real test database.
 
-The MVP should not include AI recommendations, profile badges, photo upload, premium subscriptions, Claimed Restaurants, Food Crawl planning, repeat-visit review layers, map-heavy UI, Nrtsearch, Kubernetes, or AWS analytics warehouse workflows.
+The MVP should not include open-ended AI recommendations, profile badges, photo upload, premium subscriptions, Claimed Restaurants, Food Crawl planning, repeat-visit review layers, map-heavy UI, Nrtsearch, Kubernetes, or AWS analytics warehouse workflows.
 
 ## Phase 2 Implementation
 
@@ -246,6 +251,7 @@ Testing decisions:
 - Ranking tests should verify that dish-specific review data drives dish rankings and that restaurant-level metadata does not override food-specific signals.
 - Ranking tests should verify that optional experience factors can be toggled into ranking/filtering without changing the default food-first ranking behavior.
 - Distance tests should verify that distance filters narrow the result set without changing food-quality rank, and that Convenience Mode keeps food-quality rank visible when ordering by convenience.
+- Group Dish Match tests should verify that multiple selected Canonical Dishes produce deterministic Restaurant or Location matches, preserve per-dish ranks/confidence labels, handle missing or Emerging dishes clearly, and do not collapse into a generic restaurant-wide score.
 - Geocoding tests should verify that Location coordinates are stored and cached so repeated location lookups do not require repeated external geocoding calls.
 - Ranking confidence tests should verify that RestaurantDishes with fewer than the configured review threshold are labeled Emerging and that changing the threshold does not require schema changes.
 - Verification tests should verify that user submissions start unverified, that AI suggestions do not automatically verify records, and that merged records preserve attached reviews and rankings.
@@ -267,7 +273,7 @@ Testing decisions:
 - Publishing this PRD to Linear.
 - Building the full app implementation in this planning artifact.
 - Migrating or reusing the existing Express/Handlebars/MySQL code directly.
-- AI recommendations in the first MVP implementation.
+- Open-ended AI recommendations in the first MVP implementation.
 - Lucene/Nrtsearch production deployment in the first MVP.
 - Map-heavy UI in the first MVP.
 - Kubernetes/EKS deployment in the first MVP.

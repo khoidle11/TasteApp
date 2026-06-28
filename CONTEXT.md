@@ -108,6 +108,14 @@ _Avoid_: Bias, auxiliary feature, vibe
 An ordered comparison of RestaurantDishes for a Canonical Dish, based primarily on Food Quality Signals.
 _Avoid_: Restaurant ranking, overall ranking
 
+**Group Dish Match**:
+A discovery flow where a TasteApp User selects two or more Canonical Dishes and TasteApp ranks Restaurants or Locations by how well they can satisfy all selected dishes. The MVP version is deterministic and algorithmic: it combines each selected dish's RestaurantDish rank, confidence, and availability without pretending the restaurant has one overall score.
+_Avoid_: Restaurant recommendation, group recommendation, AI recommendation
+
+**Match Score**:
+The combined result used by Group Dish Match. A Match Score should expose the per-dish tradeoffs behind it, such as one strong dish and one Emerging dish, rather than hiding them behind a vague overall restaurant rating.
+_Avoid_: Restaurant score, overall score
+
 **Emerging Ranking**:
 A Dish Ranking entry based on fewer than the current confidence threshold of Dish Reviews. The MVP threshold is five Dish Reviews, but the threshold should be treated as configurable as TasteApp grows.
 _Avoid_: Low-confidence ranking, new ranking

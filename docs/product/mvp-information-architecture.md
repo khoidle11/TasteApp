@@ -3,13 +3,13 @@
 Linear issue: [TST-26](https://linear.app/khoile11/issue/TST-26/define-tasteapp-mvp-information-architecture)
 FigJam artifact: [TasteApp MVP Information Architecture](https://www.figma.com/board/da3SzJ39QTKTLdKYDgDlQi?utm_source=codex&utm_content=edit_in_figjam&oai_id=&request_id=7f2ff7ba-521c-4b49-b2d1-19abc84b54df)
 
-This route map keeps TasteApp dish-first: users enter through Canonical Dish search or public SEO pages, compare RestaurantDishes on Dish Ranking pages, inspect RestaurantDish evidence through Dish Reviews, and contribute missing catalog data without making user submissions verified by default.
+This route map keeps TasteApp dish-first: users enter through Canonical Dish search, Group Dish Match, or public SEO pages, compare RestaurantDishes on Dish Ranking pages, inspect RestaurantDish evidence through Dish Reviews, and contribute missing catalog data without making user submissions verified by default.
 
 ## Navigation Model
 
 Mobile primary tabs:
 
-- **Search**: Canonical Dish search, list-first Dish Rankings, distance filters, RestaurantDish detail, and Restaurant pages.
+- **Search**: Canonical Dish search, Group Dish Match, list-first Dish Rankings, distance filters, RestaurantDish detail, and Restaurant pages.
 - **Saved**: Saved Items owned by the signed-in TasteApp User.
 - **Contribute**: Catalog Contribution entry point for missing Restaurants, Locations, Canonical Dishes, Menu Items, and RestaurantDishes.
 - **Account**: profile, owned Dish Reviews, settings, and sign-out.
@@ -28,6 +28,7 @@ Web primary areas:
 | `/dishes`                              | Web, mobile | MVP       | Canonical Dish search and discovery entry.                                                   |
 | `/dishes/:canonicalDishSlug`           | Web, mobile | MVP       | Public Canonical Dish page with RestaurantDish rankings.                                     |
 | `/dishes/:canonicalDishSlug/rankings`  | Web, mobile | MVP       | List-first Dish Ranking with distance filters and Emerging labels.                           |
+| `/dish-match`                          | Web, mobile | MVP       | Select two or more Canonical Dishes and find Restaurants or Locations where all are strong.  |
 | `/restaurant-dishes/:restaurantDishId` | Web, mobile | MVP       | RestaurantDish detail, food-quality summary, Dish Reviews, save, review, and report actions. |
 | `/restaurants/:restaurantSlug`         | Web, mobile | MVP       | Restaurant profile with Locations and known RestaurantDishes.                                |
 | `/reviews/new?restaurantDishId=`       | Web, mobile | MVP       | Dish Review creation with required Food Quality Signals.                                     |
@@ -51,12 +52,13 @@ Web primary areas:
 Signed-out:
 
 - Public search from `/` or `/dishes`.
+- Public Group Dish Match entry from `/dish-match`.
 - SEO entry into `/dishes/:canonicalDishSlug`, `/restaurants/:restaurantSlug`, or `/restaurant-dishes/:restaurantDishId`.
 - Sign-in gate when saving, reviewing, contributing catalog data, or viewing private account data.
 
 Signed-in:
 
-- Search tab to Canonical Dish search, Dish Ranking, RestaurantDish detail, and Dish Review creation.
+- Search tab to Canonical Dish search, Group Dish Match, Dish Ranking, RestaurantDish detail, and Dish Review creation.
 - Saved tab to Saved Items.
 - Contribute tab to Catalog Contribution flows.
 - Account tab to profile, owned reviews, settings, and sign-out.
@@ -75,6 +77,14 @@ Dish search to ranking:
 2. The app resolves the best matching Canonical Dish and shows a Dish Ranking.
 3. Ranking results compare RestaurantDishes, show distance labels, and mark low-sample entries as Emerging.
 4. User opens a RestaurantDish detail page or adjusts distance filters.
+
+Group Dish Match:
+
+1. User selects two or more Canonical Dishes, such as pizza and fried chicken.
+2. The app finds Restaurants or Locations with RestaurantDishes for the selected dishes.
+3. Results are ordered by a deterministic Match Score that combines food-quality rank, confidence, and availability across the selected dishes.
+4. Each result shows the per-dish tradeoff, such as one top-ranked dish plus one Emerging dish, so the match does not become a hidden restaurant-wide score.
+5. User opens the Restaurant page, a specific RestaurantDish detail page, or adjusts distance filters.
 
 RestaurantDish ranking to review:
 
@@ -102,3 +112,4 @@ Reporting:
 - Should moderation queues be invisible internal routes in MVP, or does the team need a basic web screen before public launch?
 - Should `Saved Items` include Canonical Dishes in MVP, or only RestaurantDishes and Restaurants?
 - Does the mobile Contribute tab deserve a permanent primary tab, or should it be an action from search empty states until contribution volume proves it needs top-level space?
+- What exact Group Dish Match weighting should MVP use for rank, confidence, missing dishes, distance filters, and tie-breaking?
