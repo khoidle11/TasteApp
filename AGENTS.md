@@ -37,6 +37,7 @@ These rules bias toward caution over speed. For trivial tasks, use judgment.
 
 - Work from short-lived branches and merge through pull requests into `main`.
 - Keep `main` deployable and protected by the required CI status checks documented in `docs/delivery/workflow.md`.
+- In the Codex desktop environment, `gh auth status` may look invalid from the sandbox even after Khoi has freshly authenticated. Before concluding GitHub auth is broken, rerun the relevant `gh` command with elevated shell access so it can read the local keyring/session.
 - For Linear work, confirm the GitHub integration is connected for the repo, use branch names formatted as `feat-TST-123-short-title`, include the issue ID in PR titles, and include both the full Linear issue URL and a magic-word reference in the PR description. Use `Related to <issue ID>` or `Refs <issue ID>` to link without closing; use `Fixes`, `Closes`, or `Resolves` only when merge should complete the issue. For TST-34, use `https://linear.app/khoile11/issue/TST-34/create-claudemdagentmd` and `Related to TST-34`.
 - Pull request descriptions should include `Summary`, `What I changed`, `Test Plan`, `Edge Cases Considered`, and a 4-5 item SWE checklist covering scope, domain language, ADR impact, validation, and user-facing risks.
 - Do not add app, API, or infrastructure frameworks without recording or updating the relevant ADR.
