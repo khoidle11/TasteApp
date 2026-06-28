@@ -165,3 +165,8 @@ Useful commands:
 ## Status
 
 This repo is currently in product and architecture planning. Implementation should begin after the MVP boundaries and core domain model are stable.
+
+## Linear Project Links
+https://linear.app/khoile11/project/tasteapp-phase-1-mvp-5978d94f4bbf/overview
+https://linear.app/khoile11/project/tasteapp-mvp-frontend-experience-d9cd4eb9290d/overview
+
