@@ -275,7 +275,7 @@ Strong success criteria let agents loop independently. Weak criteria such as "ma
 
 **Planned MVP stack:**
 
-- **Monorepo:** pnpm workspaces + Turborepo
+- **Monorepo:** pnpm workspaces
 - **Mobile:** Expo React Native + TypeScript
 - **Web:** Next.js + TypeScript
 - **API:** TypeScript API layer, currently favoring tRPC or typed REST over GraphQL for MVP
@@ -310,7 +310,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 
 **Key decisions:**
 
-- Use pnpm workspaces and Turborepo.
+- Use pnpm workspaces.
 - Use DDD bounded contexts for backend modularity.
 - Use PostgreSQL with code-first Prisma migrations.
 - Keep business logic in TypeScript, not stored procedures.
