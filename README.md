@@ -268,7 +268,7 @@ cost model, and rollback process are understood.
 
 ## Status
 
-This repo is currently in product and architecture planning. Implementation should begin after the MVP boundaries and core domain model are stable.
+This repo is still primarily in product and architecture planning, but `main` now includes initial TypeScript tooling, CI checks, and a baseline `src/health.ts` module with a Vitest test. Broader product implementation should continue after the MVP boundaries and core domain model are stable.
 
 ## Linear Project Links
 
