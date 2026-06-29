@@ -61,7 +61,7 @@ Not in MVP: open-ended AI recommendations, profile badges, photo upload, premium
 
 Planned MVP stack:
 
-- **Monorepo:** pnpm workspaces + Turborepo
+- **Monorepo:** pnpm workspaces
 - **Mobile:** Expo React Native + TypeScript
 - **Web:** Next.js + TypeScript
 - **API:** TypeScript API layer, favoring tRPC or typed REST for MVP
@@ -96,7 +96,7 @@ TasteApp is planned as a TypeScript-first monorepo:
 
 Key decisions:
 
-- Use pnpm workspaces and Turborepo.
+- Use pnpm workspaces.
 - Use DDD bounded contexts for backend modularity.
 - Use PostgreSQL with code-first Prisma migrations.
 - Keep business logic in TypeScript, not stored procedures.
@@ -167,6 +167,6 @@ Useful commands:
 This repo is currently in product and architecture planning. Implementation should begin after the MVP boundaries and core domain model are stable.
 
 ## Linear Project Links
+
 https://linear.app/khoile11/project/tasteapp-phase-1-mvp-5978d94f4bbf/overview
 https://linear.app/khoile11/project/tasteapp-mvp-frontend-experience-d9cd4eb9290d/overview
-

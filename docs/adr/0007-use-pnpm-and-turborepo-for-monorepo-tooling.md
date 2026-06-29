@@ -1,3 +1,3 @@
-# Use pnpm and Turborepo for monorepo tooling
+# Use pnpm workspaces for monorepo tooling
 
-TasteApp will use pnpm workspaces and Turborepo for package management, task orchestration, and caching. Domain modularity should primarily live inside API bounded contexts rather than exploding every domain concept into a separate package.
+TasteApp currently uses `pnpm-workspace.yaml` for workspace layout and root `package.json` scripts for linting, typechecking, testing, and builds. Because the repository has no Turborepo configuration and `.github/workflows/ci.yml` runs those root scripts directly, the current monorepo tooling baseline is pnpm workspaces without Turborepo. Domain modularity should primarily live inside API bounded contexts rather than exploding every domain concept into a separate package.
