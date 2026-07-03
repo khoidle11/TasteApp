@@ -130,11 +130,12 @@ Needed screens:
 - Match results for a combination such as "pizza + fried chicken".
 - Result card showing the place, distance, overall match label, and per-dish evidence.
 - Tradeoff state where a place is excellent for one dish but weaker or Emerging for another.
+- Partial Match state where one selected dish is carrying the result and another selected dish is missing, under-reviewed, or only Emerging.
 - Empty or thin-data state with a path to add a missing dish at a place.
 
 Design guidance:
 
-Use plain labels such as "Best for both", "Great pizza, Emerging fried chicken", and "Missing fried chicken reviews". Do not show a black-box AI score. The interface can say "match" or "fit", but it should also show why.
+Use plain labels such as "Best for both", "Reliable for both", "Great pizza, Emerging fried chicken", and "Missing fried chicken reviews". Do not show a black-box AI score. The interface can say "match" or "fit", but it should also show why. For a search with multiple selected dishes, full matches should appear before Partial Matches; if a user opens a Partial Match, the detail view should make clear which selected dish drove the result.
 
 ### 6. Create Dish Review
 

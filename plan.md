@@ -30,6 +30,7 @@ Core stack decisions:
 - Chain detection: flag a Restaurant as a chain candidate when it has multiple Locations within a 50-mile radius; use that flag to keep Menu Item quality location-aware.
 - Distance handling: distance can filter the listings shown, but default rankings remain food-quality-first. Convenience Mode can prioritize nearby options while still displaying each listing's original food-quality rank.
 - Group Dish Match: MVP should let users select two or more Canonical Dishes, such as pizza plus fried chicken, and find Restaurants or Locations where every selected dish has strong dish-specific evidence. This is a bounded algorithmic match, not broad open-ended AI recommendations.
+- Group Dish Match algorithm exploration: before implementation, create a short product/spec decision that tests simple scoring scenarios. The MVP should start with full matches first, prefer the result whose weakest selected dish is strongest, and use average rank and confidence as tie-breakers while labeling Partial Matches clearly.
 - Location UX: MVP is list-first with distance labels, not map-first. Store latitude/longitude for Locations, cache geocoding results, and defer map-heavy UI to Phase 2.
 - Ranking confidence: show rankings immediately, but label RestaurantDishes with fewer than five Dish Reviews as Emerging in the MVP. Treat the threshold as configurable so it can scale with product growth.
 - Review trust: do not require proof-of-visit in the MVP. Treat photos, recent visit claims, review history, account age, location check-ins, community reports, and contributor badges as post-MVP trust/gamification signals.
@@ -165,7 +166,7 @@ Core stack decisions:
 - Put search behind a SearchService boundary so Lucene/Nrtsearch-inspired search can be introduced later.
 - Keep service, ambiance, popularity, convenience, and general restaurant sentiment as optional experience factors that users can include or exclude from ranking/filtering.
 - Treat distance as a filter by default rather than a food-quality ranking input. Convenience Mode may reorder listings by closeness, but should preserve visible food-quality rank in the interface.
-- Implement Group Dish Match as a Discovery application service that accepts explicit Canonical Dish selections and returns Restaurants or Locations with per-dish RestaurantDish evidence, confidence labels, and a deterministic Match Score. Do not use broad AI ranking for this MVP slice.
+- Implement Group Dish Match as a Discovery application service that accepts explicit Canonical Dish selections and returns Restaurants or Locations with per-dish RestaurantDish evidence, confidence labels, and a deterministic Match Score. Do not use broad AI ranking for this MVP slice. Do not implement the production behavior until the simple MVP scoring scenarios are specified.
 - Keep MVP location UX list-first. Store latitude/longitude on Locations, cache geocoding results, and defer map-heavy UI until Phase 2.
 - Show Dish Rankings immediately, but label RestaurantDishes with fewer than five Dish Reviews as Emerging in the MVP. Store the confidence threshold as configuration rather than hard-coding it into the ranking model.
 - Evaluate Nrtsearch later because Yelp's open-source Nrtsearch is a high-performance gRPC server on Apache Lucene with S3-backed/stateless container deployment patterns.
