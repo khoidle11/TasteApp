@@ -109,12 +109,16 @@ An ordered comparison of RestaurantDishes for a Canonical Dish, based primarily 
 _Avoid_: Restaurant ranking, overall ranking
 
 **Group Dish Match**:
-A discovery flow where a TasteApp User selects two or more Canonical Dishes and TasteApp ranks Restaurants or Locations by how well they can satisfy all selected dishes. The MVP version is deterministic and algorithmic: it combines each selected dish's RestaurantDish rank, confidence, and availability without pretending the restaurant has one overall score.
+A discovery flow where a TasteApp User selects two or more Canonical Dishes and TasteApp ranks Restaurants or Locations by how well they can satisfy all selected dishes. The MVP version is deterministic and algorithmic: it should favor balanced evidence across the selected dishes while exposing cases where one dish is much stronger or weaker than the others.
 _Avoid_: Restaurant recommendation, group recommendation, AI recommendation
 
 **Match Score**:
-The combined result used by Group Dish Match. A Match Score should expose the per-dish tradeoffs behind it, such as one strong dish and one Emerging dish, rather than hiding them behind a vague overall restaurant rating.
+The combined result used by Group Dish Match. A Match Score should expose the per-dish evidence behind it, such as two reliable dishes or one excellent dish plus one Emerging dish, rather than hiding the tradeoff behind a vague overall restaurant rating.
 _Avoid_: Restaurant score, overall score
+
+**Partial Match**:
+A Group Dish Match result where a Restaurant or Location has useful evidence for only some selected Canonical Dishes. Partial Matches may help users explore promising tradeoffs, but they should not be presented as full matches for a search that asks for every selected dish.
+_Avoid_: Failed match, recommendation, fallback restaurant
 
 **Emerging Ranking**:
 A Dish Ranking entry based on fewer than the current confidence threshold of Dish Reviews. The MVP threshold is five Dish Reviews, but the threshold should be treated as configurable as TasteApp grows.

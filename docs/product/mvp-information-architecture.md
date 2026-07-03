@@ -82,9 +82,12 @@ Group Dish Match:
 
 1. User selects two or more Canonical Dishes, such as pizza and fried chicken.
 2. The app finds Restaurants or Locations with RestaurantDishes for the selected dishes.
-3. Results are ordered by a deterministic Match Score that combines food-quality rank, confidence, and availability across the selected dishes.
-4. Each result shows the per-dish tradeoff, such as one top-ranked dish plus one Emerging dish, so the match does not become a hidden restaurant-wide score.
-5. User opens the Restaurant page, a specific RestaurantDish detail page, or adjusts distance filters.
+3. Full Match results are ordered by a deterministic Match Score that favors balanced evidence across all selected dishes.
+4. Each result shows the per-dish tradeoff, such as two reliable dishes or one top-ranked dish plus one Emerging dish, so the match does not become a hidden restaurant-wide score.
+5. Partial Matches may appear as clearly labeled secondary results when one selected dish is strong but another is missing, under-reviewed, or only Emerging.
+6. User opens the Restaurant page, a specific RestaurantDish detail page, contributes missing dish data, or adjusts distance filters.
+
+Implementation guardrail: create a short Group Dish Match scoring spec before implementation. The MVP formula should start with full matches first, prefer the result whose weakest selected dish is strongest, and use average rank and confidence as tie-breakers.
 
 RestaurantDish ranking to review:
 
@@ -112,4 +115,4 @@ Reporting:
 - Should moderation queues be invisible internal routes in MVP, or does the team need a basic web screen before public launch?
 - Should `Saved Items` include Canonical Dishes in MVP, or only RestaurantDishes and Restaurants?
 - Does the mobile Contribute tab deserve a permanent primary tab, or should it be an action from search empty states until contribution volume proves it needs top-level space?
-- What exact Group Dish Match weighting should MVP use for rank, confidence, missing dishes, distance filters, and tie-breaking?
+- What exact Group Dish Match formula should MVP use inside the agreed shape: full matches first, balanced evidence favored, Partial Matches clearly labeled as secondary exploration?
