@@ -122,6 +122,7 @@ Key decisions:
 
 - [PRD and product plan](./plan.md)
 - [Domain glossary](./CONTEXT.md)
+- [MVP visual direction and design system starter](./docs/product/mvp-visual-direction-design-system-starter.md)
 - [Architecture Decision Records](./docs/adr)
 - [Legal policy scaffolds](./docs/legal)
 - [Delivery workflow](./docs/delivery/workflow.md)
@@ -167,6 +168,6 @@ Useful commands:
 This repo is currently in product and architecture planning. Implementation should begin after the MVP boundaries and core domain model are stable.
 
 ## Linear Project Links
+
 https://linear.app/khoile11/project/tasteapp-phase-1-mvp-5978d94f4bbf/overview
 https://linear.app/khoile11/project/tasteapp-mvp-frontend-experience-d9cd4eb9290d/overview
-
