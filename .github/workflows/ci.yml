@@ -75,5 +75,10 @@ jobs:
       - name: Test
         run: pnpm run test
 
+      - name: Database integration tests
+        env:
+          TASTEAPP_RUN_DB_INTEGRATION_TESTS: "1"
+        run: pnpm --filter @tasteapp/api test
+
       - name: Build
         run: pnpm run build

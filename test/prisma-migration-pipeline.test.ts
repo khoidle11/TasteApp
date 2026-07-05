@@ -29,8 +29,13 @@ describe("Prisma migration pipeline", () => {
     expect(ciWorkflow).toContain("test -f prisma/schema.prisma");
     expect(ciWorkflow).toContain("pnpm run db:generate");
     expect(ciWorkflow).toContain("pnpm run db:migrate:deploy");
+    expect(ciWorkflow).toContain('TASTEAPP_RUN_DB_INTEGRATION_TESTS: "1"');
+    expect(ciWorkflow).toContain("pnpm --filter @tasteapp/api test");
     expect(ciWorkflow.indexOf("- name: Apply committed Prisma migrations")).toBeLessThan(
       ciWorkflow.indexOf("- name: Test")
+    );
+    expect(ciWorkflow.indexOf("- name: Apply committed Prisma migrations")).toBeLessThan(
+      ciWorkflow.indexOf("- name: Database integration tests")
     );
 
     expect(deployWorkflow).toContain("pnpm run db:migrate:deploy");
@@ -42,6 +47,7 @@ describe("Prisma migration pipeline", () => {
     expect(deliveryWorkflow).toContain("prisma migrate dev --name <name>");
     expect(deliveryWorkflow).toContain("committed for review");
     expect(deliveryWorkflow).toContain("CI verifies committed migrations");
+    expect(deliveryWorkflow).toContain("runs the narrow API database integration tests");
     expect(deliveryWorkflow).toContain("CD applies committed migrations");
 
     const pipelineCommands = [ciWorkflow, deployWorkflow].join("\n");

@@ -32,6 +32,7 @@ That job runs:
 - `pnpm run lint`
 - `pnpm run typecheck`
 - `pnpm run test`
+- `TASTEAPP_RUN_DB_INTEGRATION_TESTS=1 pnpm --filter @tasteapp/api test`
 - `pnpm run build`
 
 Local contributors should run `pnpm run check` before opening a pull request.
@@ -40,7 +41,7 @@ Local contributors should run `pnpm run check` before opening a pull request.
 
 TasteApp uses code-first Prisma migrations. New migrations are created locally with `prisma migrate dev --name <name>` and committed for review with the Prisma schema changes.
 
-CI verifies committed migrations against a disposable PostgreSQL database before tests run. CD applies committed migrations with `prisma migrate deploy` before application rollout. Normal CI/CD workflows must not run destructive or interactive Prisma commands such as `prisma migrate dev`, `prisma migrate reset`, or `prisma studio`.
+CI verifies committed migrations against a disposable PostgreSQL database before tests run, then runs the narrow API database integration tests against that migrated schema. CD applies committed migrations with `prisma migrate deploy` before application rollout. Normal CI/CD workflows must not run destructive or interactive Prisma commands such as `prisma migrate dev`, `prisma migrate reset`, or `prisma studio`.
 
 ## Local Setup
 
