@@ -1,0 +1,9 @@
+fail-on-severity: "high"
+fail-on-scopes:
+  - "runtime"
+  - "development"
+license-check: true
+vulnerability-check: true
+show-openssf-scorecard: true
+warn-on-openssf-scorecard-level: 2
+show-patched-versions: true

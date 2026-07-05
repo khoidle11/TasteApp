@@ -37,6 +37,34 @@ That job runs:
 
 Local contributors should run `pnpm run check` before opening a pull request.
 
+## Security And Dependency Guardrails
+
+TasteApp starts security and dependency scanning as low-noise advisory guardrails.
+The goal is to catch risky packages, leaked secrets, and suspicious dependency
+changes early without turning every early PR into a security-firefighting
+exercise.
+
+Dependabot covers npm/pnpm workspace dependencies and GitHub Actions
+dependencies. Patch and minor npm updates are grouped into a weekly PR, GitHub
+Actions updates are grouped separately, and major version updates remain
+separate PRs because they are more likely to require human review.
+
+The `Dependency Review` workflow runs on pull requests and fails visibly when a
+PR introduces high or critical dependency vulnerabilities in runtime or
+development dependencies. It is intentionally not a required status check yet.
+Treat failures as actionable review signals, but keep merge blocking limited to
+the required CI check until the scanner has proven reliable for this repo.
+
+Repository settings should enable GitHub secret scanning and push protection
+where available. Server-only secrets belong behind backend-owned boundaries and
+must not be committed to the repo, placed in client app environment files, or
+exposed through web/mobile bundles. Secret scanning alerts should be investigated
+as credential incidents even when the matching secret is later rotated.
+
+CodeQL is deferred until TasteApp has enough stable backend/API surface for the
+findings to be useful. Add it as a required or advisory workflow only after the
+team can tune false positives and document the expected response behavior.
+
 The `Deploy` workflow is intentionally not a required status check. It is a
 visible manual placeholder until a real production rollout target exists, so it
 is allowed to fail with its placeholder message.
@@ -54,9 +82,8 @@ product or infrastructure surface exists:
   database migrations.
 - Mobile EAS builds should wait until the Expo app has enough product surface to
   justify recurring iOS and Android build cost.
-- Security and dependency scanning should start as a low-noise smoke alarm for
-  risky packages, leaked secrets, and suspicious code patterns. Early scanning
-  may be advisory before it becomes a required PR gate.
+- CodeQL should wait until the backend/API surface is stable enough to produce
+  useful findings without excessive false positives.
 - Optional Prisma drift checking belongs outside the baseline CI check unless
   schema and migration drift becomes a repeated risk.
 - Release tagging and changelog automation should wait until TasteApp has real
