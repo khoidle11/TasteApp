@@ -132,12 +132,13 @@ Key decisions:
 Prerequisites:
 
 - Node.js 20 or newer
-- Corepack enabled with `corepack enable`
-- pnpm 9
+- Corepack enabled. If `corepack enable` cannot write to `/usr/local/bin`, use `corepack enable --install-directory ~/.local/bin`.
+- pnpm 9. This repo pins pnpm through `packageManager` in `package.json`.
 
 Setup:
 
 ```bash
+cd /Users/Khoi/Documents/TasteApp2
 pnpm install
 pnpm run check
 ```
@@ -151,6 +152,94 @@ Useful commands:
 - `pnpm run test`: run Vitest.
 - `pnpm run build`: compile TypeScript.
 - `pnpm run check`: run the full local quality gate.
+
+App commands:
+
+- `pnpm --filter @tasteapp/api dev`: build and start the API shell on `127.0.0.1:4000`.
+- `pnpm --filter @tasteapp/web dev`: start the Next.js web shell.
+- `pnpm --filter @tasteapp/mobile dev`: start the Expo mobile shell.
+- `pnpm --filter @tasteapp/contracts test`: run shared contract tests.
+
+## Environments and Deployment
+
+TasteApp is still in repository and MVP foundation setup. These instructions describe the intended workflow and should be expanded as the API, web, mobile, Docker Compose, Prisma, and AWS CDK packages are introduced.
+
+### Local
+
+Use local development for day-to-day coding and pre-PR checks.
+
+```bash
+cd /Users/Khoi/Documents/TasteApp2
+pnpm install
+pnpm run check
+```
+
+Run app shells:
+
+```bash
+pnpm --filter @tasteapp/api dev
+pnpm --filter @tasteapp/web dev
+pnpm --filter @tasteapp/mobile dev
+```
+
+Start local PostgreSQL services:
+
+```bash
+docker compose up -d
+```
+
+This starts:
+
+- `postgres`: development database on `localhost:5432`
+- `postgres-test`: test database on `localhost:5433`
+
+Connection string examples live in [.env.example](./.env.example).
+
+Stop local PostgreSQL services:
+
+```bash
+docker compose down
+```
+
+When Prisma is added, local migration creation should happen from a feature branch:
+
+```bash
+pnpm run db:migrate -- --name <migration-name>
+pnpm run db:generate
+```
+
+Local development is the only place where new migrations should be created. Do not create migrations in CI or production.
+
+### Development
+
+The development workflow is pull-request based:
+
+1. Create a short-lived branch for the Linear issue.
+2. Install dependencies with `pnpm install`.
+3. Run `pnpm run check` locally before opening a PR.
+4. Open a PR into `main`.
+5. Let GitHub Actions run install, lint, typecheck, test, and build.
+
+When Prisma is added, PR CI should also generate Prisma Client and apply committed migrations against a disposable PostgreSQL test database. CI should verify migrations, not create them.
+
+### Production
+
+Production deployment is not implemented yet. The planned production direction is AWS-first:
+
+- AWS CDK with TypeScript for infrastructure.
+- RDS PostgreSQL for the application database.
+- S3 for media, data exports, and later object storage needs.
+- Deployment from reviewed changes merged through `main`.
+
+When production deployment exists, the pipeline should:
+
+1. Install dependencies with a frozen lockfile.
+2. Run the same quality gate used in CI.
+3. Build deployable app artifacts.
+4. Apply committed database migrations with `prisma migrate deploy`.
+5. Deploy the API, web app, and supporting infrastructure.
+
+Production should not run `prisma migrate dev`, `prisma migrate reset`, or `prisma studio`.
 
 ## Delivery Workflow
 
@@ -167,6 +256,6 @@ Useful commands:
 This repo is currently in product and architecture planning. Implementation should begin after the MVP boundaries and core domain model are stable.
 
 ## Linear Project Links
+
 https://linear.app/khoile11/project/tasteapp-phase-1-mvp-5978d94f4bbf/overview
 https://linear.app/khoile11/project/tasteapp-mvp-frontend-experience-d9cd4eb9290d/overview
-

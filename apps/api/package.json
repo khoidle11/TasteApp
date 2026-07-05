@@ -1,0 +1,17 @@
+{
+  "name": "@tasteapp/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "pnpm --filter @tasteapp/contracts build && pnpm run build && node dist/server.js",
+    "lint": "eslint . --max-warnings=0",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tasteapp/contracts": "workspace:*"
+  }
+}

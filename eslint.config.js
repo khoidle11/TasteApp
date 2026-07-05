@@ -4,7 +4,16 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "build", "coverage", "node_modules", ".next", ".expo", "eslint.config.js"]
+    ignores: [
+      "**/dist/**",
+      "**/build/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.expo/**",
+      ".turbo/**",
+      "eslint.config.js"
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
