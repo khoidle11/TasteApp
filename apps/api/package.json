@@ -8,10 +8,15 @@
     "dev": "pnpm --filter @tasteapp/contracts build && pnpm run build && node dist/server.js",
     "lint": "eslint . --max-warnings=0",
     "start": "node dist/server.js",
-    "test": "vitest run",
+    "test": "pnpm --filter @tasteapp/contracts build && vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/backend": "^3.10.0",
+    "@prisma/client": "^6.19.3",
     "@tasteapp/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
   }
 }

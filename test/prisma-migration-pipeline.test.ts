@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -48,5 +49,23 @@ describe("Prisma migration pipeline", () => {
     expect(pipelineCommands).not.toMatch(/\bprisma migrate dev\b/);
     expect(pipelineCommands).not.toMatch(/\bprisma migrate reset\b/);
     expect(pipelineCommands).not.toMatch(/\bprisma studio\b/);
+  });
+
+  it("defines committed Prisma models for local TasteApp User account mapping", () => {
+    const schema = readRepositoryFile("prisma/schema.prisma");
+    const migrationsPath = join(repositoryRoot, "prisma/migrations");
+    const migrationDirectories = readdirSync(migrationsPath).filter((entry) =>
+      existsSync(join(migrationsPath, entry, "migration.sql"))
+    );
+    const migrationSql = migrationDirectories
+      .map((entry) => readRepositoryFile(`prisma/migrations/${entry}/migration.sql`))
+      .join("\n");
+
+    expect(schema).toContain("model TasteAppUser");
+    expect(schema).toContain("model ExternalAuthIdentity");
+    expect(schema).toContain('@@map("tasteapp_users")');
+    expect(schema).toContain("@@unique([provider, providerSubject])");
+    expect(migrationSql).toContain('CREATE TABLE "tasteapp_users"');
+    expect(migrationSql).toContain('CREATE TABLE "external_auth_identities"');
   });
 });

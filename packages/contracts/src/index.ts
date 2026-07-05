@@ -1,4 +1,10 @@
 export {
+  CurrentTasteAppUserResponseSchema,
+  TasteAppUserDtoSchema,
+  type CurrentTasteAppUserResponse,
+  type TasteAppUserDto
+} from "./account.js";
+export {
   HealthResponseSchema,
   ReadinessCheckSchema,
   ReadinessResponseSchema,

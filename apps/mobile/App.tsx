@@ -1,15 +1,59 @@
+import { ClerkProvider, useUser } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { StyleSheet, Text, View } from "react-native";
 
+import { getMobileAccountShellState } from "./src/account-shell";
 import { getMobileHealthStatus } from "./src/health";
 
 export default function App() {
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (!publishableKey) {
+    return <TasteAppMobileShell />;
+  }
+
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <TasteAppAuthenticatedShell />
+    </ClerkProvider>
+  );
+}
+
+function TasteAppAuthenticatedShell() {
+  const { user } = useUser();
+
+  return (
+    <TasteAppMobileShell
+      displayName={user ? getClerkDisplayName(user) : null}
+      isSignedIn={Boolean(user)}
+    />
+  );
+}
+
+type TasteAppMobileShellProps = {
+  displayName?: string | null;
+  isSignedIn?: boolean;
+};
+
+function TasteAppMobileShell({ displayName = null, isSignedIn = false }: TasteAppMobileShellProps) {
+  const account = getMobileAccountShellState(
+    isSignedIn
+      ? {
+          displayName
+        }
+      : null
+  );
   const health = getMobileHealthStatus();
 
   return (
     <View style={styles.screen}>
       <View style={styles.panel}>
         <Text style={styles.eyebrow}>TasteApp Mobile</Text>
-        <Text style={styles.title}>Dish-first discovery is booting up.</Text>
+        <Text style={styles.title}>{account.heading}</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Account</Text>
+          <Text style={styles.value}>{account.statusLabel}</Text>
+        </View>
         <View style={styles.row}>
           <Text style={styles.label}>Service</Text>
           <Text style={styles.value}>{health.service}</Text>
@@ -18,12 +62,33 @@ export default function App() {
           <Text style={styles.label}>Status</Text>
           <Text style={styles.value}>{health.status}</Text>
         </View>
+        <Text style={styles.action}>{account.actionLabel}</Text>
       </View>
     </View>
   );
 }
 
+function getClerkDisplayName(user: {
+  firstName?: string | null;
+  fullName?: string | null;
+  lastName?: string | null;
+}): string | null {
+  if (user.fullName) {
+    return user.fullName;
+  }
+
+  const nameParts = [user.firstName, user.lastName].filter(Boolean);
+
+  return nameParts.length > 0 ? nameParts.join(" ") : null;
+}
+
 const styles = StyleSheet.create({
+  action: {
+    color: "#8b3f2b",
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 20
+  },
   eyebrow: {
     color: "#8b3f2b",
     fontSize: 13,
