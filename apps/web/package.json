@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.5.12",
     "@tasteapp/contracts": "workspace:*",
     "next": "^16.1.1",
     "react": "^19.2.3",
