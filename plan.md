@@ -158,6 +158,14 @@ Core stack decisions:
 - Use database constraints for data integrity, such as required fields, foreign keys, uniqueness, and referential behavior. Do not hide ranking, verification, moderation, entitlement, or review-integrity logic inside stored procedures.
 - Use Prisma Client as the default application query interface. LINQ does not apply because TasteApp is not using C#/.NET; raw SQL remains acceptable for advanced queries that Prisma cannot express cleanly.
 - Use Docker Compose for local development with API, Postgres, test database, and future service containers.
+- Treat GitHub Actions as a staged delivery roadmap rather than one oversized infrastructure ticket.
+- Keep `CI` as the required pull-request and `main` status check. That workflow should install dependencies with a frozen lockfile, generate Prisma Client when `prisma/schema.prisma` exists, apply committed Prisma migrations against disposable PostgreSQL, and then run format, lint, typecheck, test, and build checks.
+- Keep `Deploy` as a guarded manual `workflow_dispatch` placeholder that only runs from `main` until real AWS rollout steps exist. Do not make it a required merge check while it remains a placeholder.
+- Start with manual production promotion from `main` while infrastructure is still young. Revisit automatic deploys only after hosting cost, rollback behavior, and real production rollout needs are better understood.
+- Treat Prisma Client generation plus committed migration verification as the baseline CI path, and use `prisma migrate deploy` when real production rollout replaces the placeholder deploy. Keep optional drift detection in a separate follow-up issue instead of expanding the base CI path.
+- Add preview deploys only after the hosting target is chosen through a separate hosting decision.
+- Start security and dependency scanning as an advisory, low-noise smoke alarm first. Only make those scans required if the signal becomes reliable enough to justify pull-request blocking.
+- Keep optional drift detection, production rollout automation, preview deploys, mobile builds, security scans, and release automation in separate follow-up issues rather than growing one umbrella CI/CD task.
 - Do not introduce Terraform for the local MVP. Use AWS CDK with TypeScript for the first real AWS deployment because TasteApp is AWS-first and TypeScript-first.
 - Use AWS for production infrastructure, starting with RDS Postgres and S3.
 - Use S3 for media uploads, data exports, structured logs, and eventual data lake storage.
@@ -206,6 +214,7 @@ The first usable MVP should include:
 - Basic report flow for incorrect, harmful, duplicate, or low-quality content.
 - Basic moderation states for reports and User Submissions.
 - Docker-based local development.
+- GitHub Actions CI with the `Install, lint, typecheck, test, and build` job required before merging to `main`.
 - API integration tests against a real test database.
 
 The MVP should not include open-ended AI recommendations, profile badges, photo upload, premium subscriptions, Claimed Restaurants, Food Crawl planning, repeat-visit review layers, map-heavy UI, Nrtsearch, Kubernetes, or AWS analytics warehouse workflows.
@@ -297,3 +306,14 @@ The API should be understood as a delivery layer, not the domain model or databa
 Yelp can use Python heavily because large companies are polyglot and can afford specialized services for backend, data, ML, and search. TasteApp should start simpler: TypeScript for mobile, web, and API; Python only later if AI/data complexity warrants it.
 
 The Yelp-inspired infrastructure should be treated as a roadmap, not an MVP checklist. The immediate goal is to build a clean, monetizable, dish-first product foundation that can grow toward serious search, AI, data, and cloud infrastructure over time.
+
+The delivery roadmap should stay split into focused follow-up issues instead of turning `TST-35` into one oversized implementation ticket. The current baseline is the required `CI` workflow plus a guarded manual `Deploy` placeholder, and contributor-facing rules should continue to live in `docs/delivery/workflow.md`. `Deploy` should stay non-blocking while it is only a placeholder, production promotion should start manually from `main`, and preview deploys should wait until the hosting target is chosen explicitly.
+
+- [`TST-72`](https://linear.app/khoile11/issue/TST-72/add-prisma-migration-checks-to-cicd-pipeline) keeps committed Prisma migration verification scoped to the core CI pipeline.
+- [`TST-74`](https://linear.app/khoile11/issue/TST-74/add-production-deploy-workflow-for-main) covers the manual-first production deploy workflow for `main` after the hosting target and rollback constraints are clearer.
+- [`TST-75`](https://linear.app/khoile11/issue/TST-75/add-web-preview-deploys-for-pull-requests) covers web preview deploys for pull requests after the hosting target is chosen.
+- [`TST-76`](https://linear.app/khoile11/issue/TST-76/add-mobile-eas-build-workflow-for-ios-and-android) covers mobile EAS builds for iOS and Android.
+- [`TST-77`](https://linear.app/khoile11/issue/TST-77/add-security-and-dependency-scanning-guardrails) covers advisory-first security and dependency scanning guardrails.
+- [`TST-78`](https://linear.app/khoile11/issue/TST-78/add-optional-prisma-migration-drift-check) covers optional Prisma migration drift checks without expanding the base CI path.
+- [`TST-79`](https://linear.app/khoile11/issue/TST-79/add-release-tagging-and-changelog-workflow) covers release tagging and changelog automation.
+- [`TST-80`](https://linear.app/khoile11/issue/TST-80/spike-web-hosting-target-for-preview-and-production-deploys) chooses the first web hosting target before preview or production deploy tickets pick a platform implicitly.
