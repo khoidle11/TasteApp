@@ -12,9 +12,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/clerk-expo": "^2.19.31",
+    "@clerk/expo": "^3.6.5",
     "@tasteapp/contracts": "workspace:*",
     "expo": "^54.0.30",
+    "expo-secure-store": "~15.0.8",
     "react": "^19.2.3",
     "react-native": "^0.82.1"
   },

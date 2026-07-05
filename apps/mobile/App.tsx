@@ -1,4 +1,5 @@
-import { ClerkProvider, useUser } from "@clerk/clerk-expo";
+import { ClerkProvider, useUser } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { StyleSheet, Text, View } from "react-native";
 
 import { getMobileAccountShellState } from "./src/account-shell";
@@ -12,7 +13,7 @@ export default function App() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey}>
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <TasteAppAuthenticatedShell />
     </ClerkProvider>
   );
