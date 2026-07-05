@@ -15,30 +15,20 @@ type StoredTasteAppUser = TasteAppUserDto & {
 };
 
 export type TasteAppUserRepository = {
-  findByExternalIdentity(
-    provider: AuthProvider,
-    providerSubject: string
-  ): Promise<TasteAppUserDto | null>;
-  createForExternalIdentity(context: AuthenticatedRequestContext): Promise<TasteAppUserDto>;
+  findOrCreateByExternalIdentity(context: AuthenticatedRequestContext): Promise<TasteAppUserDto>;
 };
 
 export class InMemoryTasteAppUserRepository implements TasteAppUserRepository {
   private readonly users = new Map<string, StoredTasteAppUser>();
 
-  findByExternalIdentity(
-    provider: AuthProvider,
-    providerSubject: string
-  ): Promise<TasteAppUserDto | null> {
-    const user = this.users.get(externalIdentityKey(provider, providerSubject));
+  findOrCreateByExternalIdentity(context: AuthenticatedRequestContext): Promise<TasteAppUserDto> {
+    const key = externalIdentityKey(context.provider, context.providerSubject);
+    const existingUser = this.users.get(key);
 
-    if (!user) {
-      return Promise.resolve(null);
+    if (existingUser) {
+      return Promise.resolve(toDto(existingUser));
     }
 
-    return Promise.resolve(toDto(user));
-  }
-
-  createForExternalIdentity(context: AuthenticatedRequestContext): Promise<TasteAppUserDto> {
     const user: StoredTasteAppUser = {
       displayName: context.displayName,
       id: `00000000-0000-4000-8000-${String(this.users.size + 1).padStart(12, "0")}`,
@@ -47,8 +37,7 @@ export class InMemoryTasteAppUserRepository implements TasteAppUserRepository {
       providerSubject: context.providerSubject
     };
 
-    this.users.set(externalIdentityKey(context.provider, context.providerSubject), user);
-
+    this.users.set(key, user);
     return Promise.resolve(toDto(user));
   }
 }
@@ -57,16 +46,7 @@ export async function resolveCurrentTasteAppUser(
   context: AuthenticatedRequestContext,
   repository: TasteAppUserRepository
 ): Promise<TasteAppUserDto> {
-  const existingUser = await repository.findByExternalIdentity(
-    context.provider,
-    context.providerSubject
-  );
-
-  if (existingUser) {
-    return existingUser;
-  }
-
-  return repository.createForExternalIdentity(context);
+  return repository.findOrCreateByExternalIdentity(context);
 }
 
 function externalIdentityKey(provider: AuthProvider, providerSubject: string): string {

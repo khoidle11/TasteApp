@@ -42,17 +42,26 @@ export async function routeRequest(
 
   if (method === "GET" && url === "/account/me") {
     if (options.authContext) {
-      const user = await resolveCurrentTasteAppUser(
-        options.authContext,
-        options.accountRepository ?? prismaTasteAppUserRepository
-      );
+      try {
+        const user = await resolveCurrentTasteAppUser(
+          options.authContext,
+          options.accountRepository ?? prismaTasteAppUserRepository
+        );
 
-      return {
-        body: CurrentTasteAppUserResponseSchema.parse({
-          user
-        }),
-        statusCode: 200
-      };
+        return {
+          body: CurrentTasteAppUserResponseSchema.parse({
+            user
+          }),
+          statusCode: 200
+        };
+      } catch {
+        return {
+          body: {
+            error: "Internal server error"
+          },
+          statusCode: 500
+        };
+      }
     }
 
     return {
@@ -86,5 +95,15 @@ export function handleRequest(request: IncomingMessage, response: ServerResponse
         "content-type": "application/json; charset=utf-8"
       });
       response.end(JSON.stringify(result.body));
+    })
+    .catch(() => {
+      response.writeHead(500, {
+        "content-type": "application/json; charset=utf-8"
+      });
+      response.end(
+        JSON.stringify({
+          error: "Internal server error"
+        })
+      );
     });
 }

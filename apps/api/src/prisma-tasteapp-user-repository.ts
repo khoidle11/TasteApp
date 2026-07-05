@@ -2,54 +2,39 @@ import { PrismaClient } from "@prisma/client";
 
 import type { TasteAppUserDto } from "@tasteapp/contracts";
 
-import type {
-  AuthProvider,
-  AuthenticatedRequestContext,
-  TasteAppUserRepository
-} from "./identity.js";
+import type { AuthenticatedRequestContext, TasteAppUserRepository } from "./identity.js";
 
 export class PrismaTasteAppUserRepository implements TasteAppUserRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findByExternalIdentity(
-    provider: AuthProvider,
-    providerSubject: string
-  ): Promise<TasteAppUserDto | null> {
-    const identity = await this.prisma.externalAuthIdentity.findUnique({
+  async findOrCreateByExternalIdentity(
+    context: AuthenticatedRequestContext
+  ): Promise<TasteAppUserDto> {
+    const identity = await this.prisma.externalAuthIdentity.upsert({
+      create: {
+        email: context.email,
+        provider: context.provider,
+        providerSubject: context.providerSubject,
+        tasteAppUser: {
+          create: {
+            displayName: context.displayName,
+            primaryEmail: context.email
+          }
+        }
+      },
       include: {
         tasteAppUser: true
       },
+      update: {},
       where: {
         provider_providerSubject: {
-          provider,
-          providerSubject
+          provider: context.provider,
+          providerSubject: context.providerSubject
         }
       }
     });
 
-    if (!identity) {
-      return null;
-    }
-
     return toDto(identity.tasteAppUser);
-  }
-
-  async createForExternalIdentity(context: AuthenticatedRequestContext): Promise<TasteAppUserDto> {
-    const user = await this.prisma.tasteAppUser.create({
-      data: {
-        displayName: context.displayName,
-        externalIdentities: {
-          create: {
-            email: context.email,
-            provider: context.provider,
-            providerSubject: context.providerSubject
-          }
-        },
-        primaryEmail: context.email
-      }
-    });
-
-    return toDto(user);
   }
 }
 

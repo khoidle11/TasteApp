@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { routeRequest } from "../src/http.js";
-import { InMemoryTasteAppUserRepository } from "../src/identity.js";
+import { InMemoryTasteAppUserRepository, type TasteAppUserRepository } from "../src/identity.js";
 
 describe("API health routes", () => {
   it("returns the liveness response for GET /health", async () => {
@@ -90,5 +90,28 @@ describe("API account routes", () => {
     });
 
     expect(secondResponse).toEqual(firstResponse);
+  });
+
+  it("returns an internal server error when account resolution fails", async () => {
+    const failingRepository: TasteAppUserRepository = {
+      findOrCreateByExternalIdentity: () => Promise.reject(new Error("database unavailable"))
+    };
+
+    await expect(
+      routeRequest("GET", "/account/me", {
+        accountRepository: failingRepository,
+        authContext: {
+          displayName: "Khoi Le",
+          email: "khoi@example.com",
+          provider: "clerk",
+          providerSubject: "user_123"
+        }
+      })
+    ).resolves.toEqual({
+      body: {
+        error: "Internal server error"
+      },
+      statusCode: 500
+    });
   });
 });
