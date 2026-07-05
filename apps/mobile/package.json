@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "App.tsx",
+  "main": "expo/AppEntry.js",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "dev": "pnpm --filter @tasteapp/contracts build && expo start",
