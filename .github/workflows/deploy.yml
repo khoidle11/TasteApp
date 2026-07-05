@@ -16,6 +16,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Require main ref
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "Deployment workflows may only run from refs/heads/main."
+          echo "Current ref: ${GITHUB_REF}"
+          exit 1
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -31,6 +38,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Apply committed Prisma migrations
+        if: github.ref == 'refs/heads/main'
         run: |
           if test -f prisma/schema.prisma; then
             if test -z "${DATABASE_URL}"; then
@@ -44,6 +52,7 @@ jobs:
           fi
 
       - name: Application rollout placeholder
+        if: github.ref == 'refs/heads/main'
         run: |
           echo "Application rollout is not configured yet."
           echo "Enable this workflow on main pushes only after adding the real rollout step."

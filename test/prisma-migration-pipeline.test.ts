@@ -34,6 +34,9 @@ describe("Prisma migration pipeline", () => {
 
     expect(deployWorkflow).toContain("pnpm run db:migrate:deploy");
     expect(deployWorkflow).toContain("test -f prisma/schema.prisma");
+    expect(deployWorkflow).toContain("github.ref != 'refs/heads/main'");
+    expect(deployWorkflow).toContain("Deployment workflows may only run from refs/heads/main.");
+    expect(deployWorkflow).toContain("github.ref == 'refs/heads/main'");
 
     expect(deliveryWorkflow).toContain("prisma migrate dev --name <name>");
     expect(deliveryWorkflow).toContain("committed for review");
