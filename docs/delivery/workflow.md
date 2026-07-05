@@ -37,6 +37,36 @@ That job runs:
 
 Local contributors should run `pnpm run check` before opening a pull request.
 
+The `Deploy` workflow is intentionally not a required status check. It is a
+visible manual placeholder until a real production rollout target exists, so it
+is allowed to fail with its placeholder message.
+
+## Deferred Workflows
+
+TasteApp should add deployment and release workflows only when the matching
+product or infrastructure surface exists:
+
+- Production deploys should replace the current placeholder after the first real
+  hosting target is chosen. While infrastructure is young, production promotion
+  should stay manually triggered from `main` after CI has passed.
+- Web preview deploys should wait for real `apps/web` pages and a chosen hosting
+  target. Preview deploys must not use production secrets or apply production
+  database migrations.
+- Mobile EAS builds should wait until the Expo app has enough product surface to
+  justify recurring iOS and Android build cost.
+- Security and dependency scanning should start as a low-noise smoke alarm for
+  risky packages, leaked secrets, and suspicious code patterns. Early scanning
+  may be advisory before it becomes a required PR gate.
+- Optional Prisma drift checking belongs outside the baseline CI check unless
+  schema and migration drift becomes a repeated risk.
+- Release tagging and changelog automation should wait until TasteApp has real
+  deployable releases.
+
+Automatic production deploys can cost money whenever they build or run paid
+hosting, database, build-minute, preview, or observability resources. The first
+production workflow should therefore be manual by default, then reconsider
+automatic deploys once cost and rollback behavior are understood.
+
 ## Database Migrations
 
 TasteApp uses code-first Prisma migrations. New migrations are created locally with `prisma migrate dev --name <name>` and committed for review with the Prisma schema changes.
