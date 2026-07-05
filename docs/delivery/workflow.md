@@ -26,6 +26,8 @@ The required GitHub Actions check for `main` is:
 That job runs:
 
 - `pnpm install --frozen-lockfile`
+- If `prisma/schema.prisma` exists, `pnpm run db:generate`
+- If `prisma/schema.prisma` exists, `pnpm run db:migrate:deploy` against disposable PostgreSQL
 - `pnpm run format:check`
 - `pnpm run lint`
 - `pnpm run typecheck`
@@ -33,6 +35,12 @@ That job runs:
 - `pnpm run build`
 
 Local contributors should run `pnpm run check` before opening a pull request.
+
+## Database Migrations
+
+TasteApp uses code-first Prisma migrations. New migrations are created locally with `prisma migrate dev --name <name>` and committed for review with the Prisma schema changes.
+
+CI verifies committed migrations against a disposable PostgreSQL database before tests run. CD applies committed migrations with `prisma migrate deploy` before application rollout. Normal CI/CD workflows must not run destructive or interactive Prisma commands such as `prisma migrate dev`, `prisma migrate reset`, or `prisma studio`.
 
 ## Local Setup
 
