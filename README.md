@@ -131,7 +131,7 @@ Key decisions:
 
 Prerequisites:
 
-- Node.js 20 or newer
+- Node.js 24 LTS or newer
 - Corepack enabled. If `corepack enable` cannot write to `/usr/local/bin`, use `corepack enable --install-directory ~/.local/bin`.
 - pnpm 9. This repo pins pnpm through `packageManager` in `package.json`.
 

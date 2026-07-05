@@ -36,7 +36,7 @@ Local contributors should run `pnpm run check` before opening a pull request.
 
 ## Local Setup
 
-1. Install Node.js 20 or newer.
+1. Install Node.js 24 LTS or newer.
 2. Enable Corepack: `corepack enable`.
 3. Install dependencies: `pnpm install`.
 4. Run the full local gate: `pnpm run check`.
