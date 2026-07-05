@@ -28,8 +28,8 @@ describe("Prisma migration pipeline", () => {
     expect(ciWorkflow).toContain("test -f prisma/schema.prisma");
     expect(ciWorkflow).toContain("pnpm run db:generate");
     expect(ciWorkflow).toContain("pnpm run db:migrate:deploy");
-    expect(ciWorkflow.indexOf("pnpm run db:migrate:deploy")).toBeLessThan(
-      ciWorkflow.indexOf("pnpm run test")
+    expect(ciWorkflow.indexOf("- name: Apply committed Prisma migrations")).toBeLessThan(
+      ciWorkflow.indexOf("- name: Test")
     );
 
     expect(deployWorkflow).toContain("pnpm run db:migrate:deploy");
