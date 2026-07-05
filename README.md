@@ -162,7 +162,12 @@ App commands:
 
 ## Environments and Deployment
 
-TasteApp is still in repository and MVP foundation setup. These instructions describe the intended workflow and should be expanded as the API, web, mobile, Docker Compose, Prisma, and AWS CDK packages are introduced.
+TasteApp is still in repository and MVP foundation setup. The repo already has
+baseline CI, Prisma migration verification, Docker Compose local databases, and
+a visible manual deploy placeholder. Production, preview, mobile build,
+security scanning, and release workflows should be added through separate
+delivery roadmap issues when their matching product or infrastructure surface
+exists.
 
 ### Local
 
@@ -201,7 +206,7 @@ Stop local PostgreSQL services:
 docker compose down
 ```
 
-When Prisma is added, local migration creation should happen from a feature branch:
+Local migration creation should happen from a feature branch:
 
 ```bash
 pnpm run db:migrate -- --name <migration-name>
@@ -220,7 +225,9 @@ The development workflow is pull-request based:
 4. Open a PR into `main`.
 5. Let GitHub Actions run install, lint, typecheck, test, and build.
 
-When Prisma is added, PR CI should also generate Prisma Client and apply committed migrations against a disposable PostgreSQL test database. CI should verify migrations, not create them.
+PR CI also generates Prisma Client and applies committed migrations against a
+disposable PostgreSQL test database. CI verifies migrations; it does not create
+them.
 
 ### Production
 
@@ -230,6 +237,11 @@ Production deployment is not implemented yet. The planned production direction i
 - RDS PostgreSQL for the application database.
 - S3 for media, data exports, and later object storage needs.
 - Deployment from reviewed changes merged through `main`.
+- Manual production promotion from `main` while infrastructure is young.
+
+The `Deploy` GitHub Actions workflow is currently a visible manual placeholder
+that is restricted to `main` and allowed to fail until real rollout steps exist.
+It should not be configured as a required merge check.
 
 When production deployment exists, the pipeline should:
 
@@ -240,6 +252,9 @@ When production deployment exists, the pipeline should:
 5. Deploy the API, web app, and supporting infrastructure.
 
 Production should not run `prisma migrate dev`, `prisma migrate reset`, or `prisma studio`.
+
+Automatic production deploys may be reconsidered after the deployment target,
+cost model, and rollback process are understood.
 
 ## Delivery Workflow
 
