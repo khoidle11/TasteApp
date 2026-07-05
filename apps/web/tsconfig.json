@@ -1,0 +1,16 @@
+{
+  "extends": "../../packages/tsconfig/react.json",
+  "compilerOptions": {
+    "declaration": true,
+    "incremental": true,
+    "outDir": "dist",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["next-env.d.ts", "next.config.ts", "app/**/*.tsx", "src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules"]
+}

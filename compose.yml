@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tasteapp-postgres
+    environment:
+      POSTGRES_DB: tasteapp_dev
+      POSTGRES_PASSWORD: tasteapp
+      POSTGRES_USER: tasteapp
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasteapp -d tasteapp_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+    volumes:
+      - tasteapp-postgres-data:/var/lib/postgresql/data
+
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: tasteapp-postgres-test
+    environment:
+      POSTGRES_DB: tasteapp_test
+      POSTGRES_PASSWORD: tasteapp_test
+      POSTGRES_USER: tasteapp_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasteapp_test -d tasteapp_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5433:5432"
+    volumes:
+      - tasteapp-postgres-test-data:/var/lib/postgresql/data
+
+volumes:
+  tasteapp-postgres-data:
+  tasteapp-postgres-test-data:

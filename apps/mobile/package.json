@@ -1,0 +1,23 @@
+{
+  "name": "@tasteapp/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "pnpm --filter @tasteapp/contracts build && expo start",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tasteapp/contracts": "workspace:*",
+    "expo": "^54.0.30",
+    "react": "^19.2.3",
+    "react-native": "^0.82.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7"
+  }
+}

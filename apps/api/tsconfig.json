@@ -1,10 +1,10 @@
 {
-  "extends": "./packages/tsconfig/node.json",
+  "extends": "../../packages/tsconfig/node.json",
   "compilerOptions": {
     "declaration": true,
     "noEmit": true,
     "outDir": "dist",
     "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "eslint.config.js", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
