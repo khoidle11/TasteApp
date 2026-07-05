@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy application
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply committed Prisma migrations
+        run: |
+          if test -f prisma/schema.prisma; then
+            if test -z "${DATABASE_URL}"; then
+              echo "DATABASE_URL secret is required to deploy Prisma migrations."
+              exit 1
+            fi
+
+            pnpm run db:migrate:deploy
+          else
+            echo "No Prisma schema found; skipping Prisma migration deployment."
+          fi
+
+      - name: Application rollout placeholder
+        run: |
+          echo "Application rollout is not configured yet."
+          echo "Enable this workflow on main pushes only after adding the real rollout step."
+          exit 1

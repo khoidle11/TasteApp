@@ -13,6 +13,22 @@ jobs:
   checks:
     name: Install, lint, typecheck, test, and build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tasteapp_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tasteapp_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tasteapp_test?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +46,22 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: |
+          if test -f prisma/schema.prisma; then
+            pnpm run db:generate
+          else
+            echo "No Prisma schema found; skipping Prisma Client generation."
+          fi
+
+      - name: Apply committed Prisma migrations
+        run: |
+          if test -f prisma/schema.prisma; then
+            pnpm run db:migrate:deploy
+          else
+            echo "No Prisma schema found; skipping Prisma migration verification."
+          fi
 
       - name: Format check
         run: pnpm run format:check
