@@ -81,29 +81,41 @@ export async function routeRequest(
 }
 
 export function handleRequest(request: IncomingMessage, response: ServerResponse): void {
-  void getClerkAuthContextFromAuthorization(
-    request.headers.authorization,
-    process.env.CLERK_SECRET_KEY
-  )
-    .then((authContext) =>
-      routeRequest(request.method, request.url, {
-        authContext: authContext ?? undefined
-      })
-    )
-    .then((result) => {
-      response.writeHead(result.statusCode, {
-        "content-type": "application/json; charset=utf-8"
-      });
-      response.end(JSON.stringify(result.body));
-    })
-    .catch(() => {
-      response.writeHead(500, {
-        "content-type": "application/json; charset=utf-8"
-      });
-      response.end(
-        JSON.stringify({
-          error: "Internal server error"
-        })
-      );
+  void handleRequestAsync(request, response).catch(() => {
+    writeJsonResponse(response, {
+      body: {
+        error: "Internal server error"
+      },
+      statusCode: 500
     });
+  });
+}
+
+async function handleRequestAsync(
+  request: IncomingMessage,
+  response: ServerResponse
+): Promise<void> {
+  const authContext = requiresAuthContext(request.method, request.url)
+    ? await getClerkAuthContextFromAuthorization(
+        request.headers.authorization,
+        process.env.CLERK_SECRET_KEY
+      )
+    : null;
+
+  const result = await routeRequest(request.method, request.url, {
+    authContext: authContext ?? undefined
+  });
+
+  writeJsonResponse(response, result);
+}
+
+function requiresAuthContext(method: string | undefined, url: string | undefined): boolean {
+  return method === "GET" && url === "/account/me";
+}
+
+function writeJsonResponse(response: ServerResponse, result: JsonResponse): void {
+  response.writeHead(result.statusCode, {
+    "content-type": "application/json; charset=utf-8"
+  });
+  response.end(JSON.stringify(result.body));
 }

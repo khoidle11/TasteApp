@@ -68,7 +68,7 @@ describe("API account routes", () => {
     });
   });
 
-  it("reuses the same local TasteApp User for the same Clerk identity", async () => {
+  it("reuses the same local TasteApp User and refreshes profile fields", async () => {
     const accountRepository = new InMemoryTasteAppUserRepository();
     const authContext = {
       displayName: "Khoi Le",
@@ -85,11 +85,64 @@ describe("API account routes", () => {
       accountRepository,
       authContext: {
         ...authContext,
-        displayName: "Khoi Updated"
+        displayName: "Khoi Updated",
+        email: "updated@example.com"
       }
     });
 
-    expect(secondResponse).toEqual(firstResponse);
+    expect(secondResponse).toEqual({
+      body: {
+        user: {
+          displayName: "Khoi Updated",
+          id: "00000000-0000-4000-8000-000000000001",
+          primaryEmail: "updated@example.com"
+        }
+      },
+      statusCode: 200
+    });
+    expect(firstResponse).toMatchObject({
+      body: {
+        user: {
+          id: "00000000-0000-4000-8000-000000000001"
+        }
+      }
+    });
+  });
+
+  it("preserves known profile fields when the Clerk token omits them", async () => {
+    const accountRepository = new InMemoryTasteAppUserRepository();
+    const authContext = {
+      displayName: "Khoi Le",
+      email: "khoi@example.com",
+      provider: "clerk" as const,
+      providerSubject: "user_123"
+    };
+
+    await routeRequest("GET", "/account/me", {
+      accountRepository,
+      authContext
+    });
+
+    await expect(
+      routeRequest("GET", "/account/me", {
+        accountRepository,
+        authContext: {
+          displayName: null,
+          email: null,
+          provider: "clerk",
+          providerSubject: "user_123"
+        }
+      })
+    ).resolves.toEqual({
+      body: {
+        user: {
+          displayName: "Khoi Le",
+          id: "00000000-0000-4000-8000-000000000001",
+          primaryEmail: "khoi@example.com"
+        }
+      },
+      statusCode: 200
+    });
   });
 
   it("returns an internal server error when account resolution fails", async () => {

@@ -42,7 +42,11 @@ describe.skipIf(!runDatabaseIntegrationTests)("PrismaTasteAppUserRepository", ()
       repository
     );
 
-    expect(secondUser).toEqual(firstUser);
+    expect(secondUser).toEqual({
+      displayName: "Khoi Updated",
+      id: firstUser.id,
+      primaryEmail: "updated@example.com"
+    });
     expect(firstUser).toMatchObject({
       displayName: "Khoi Le",
       primaryEmail: "khoi@example.com"

@@ -10,6 +10,11 @@ export class PrismaTasteAppUserRepository implements TasteAppUserRepository {
   async findOrCreateByExternalIdentity(
     context: AuthenticatedRequestContext
   ): Promise<TasteAppUserDto> {
+    const tasteAppUserUpdate = {
+      ...(context.displayName !== null ? { displayName: context.displayName } : {}),
+      ...(context.email !== null ? { primaryEmail: context.email } : {})
+    };
+
     const identity = await this.prisma.externalAuthIdentity.upsert({
       create: {
         email: context.email,
@@ -25,7 +30,16 @@ export class PrismaTasteAppUserRepository implements TasteAppUserRepository {
       include: {
         tasteAppUser: true
       },
-      update: {},
+      update: {
+        ...(context.email !== null ? { email: context.email } : {}),
+        ...(Object.keys(tasteAppUserUpdate).length > 0
+          ? {
+              tasteAppUser: {
+                update: tasteAppUserUpdate
+              }
+            }
+          : {})
+      },
       where: {
         provider_providerSubject: {
           provider: context.provider,

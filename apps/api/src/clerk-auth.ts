@@ -39,7 +39,9 @@ export async function getClerkAuthContextFromAuthorization(
 async function verifyClerkToken(token: string, secretKey: string): Promise<ClerkJwtPayload | null> {
   try {
     return await verifyToken(token, { secretKey });
-  } catch {
+  } catch (error) {
+    console.error("Clerk token verification failed", error);
+
     return null;
   }
 }

@@ -26,6 +26,14 @@ export class InMemoryTasteAppUserRepository implements TasteAppUserRepository {
     const existingUser = this.users.get(key);
 
     if (existingUser) {
+      if (context.displayName !== null) {
+        existingUser.displayName = context.displayName;
+      }
+
+      if (context.email !== null) {
+        existingUser.primaryEmail = context.email;
+      }
+
       return Promise.resolve(toDto(existingUser));
     }
 
