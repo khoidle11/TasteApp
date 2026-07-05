@@ -11,6 +11,13 @@
     ],
     "types": ["node", "vitest/globals"]
   },
-  "include": ["next-env.d.ts", "next.config.ts", "app/**/*.tsx", "src/**/*.ts", "test/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "proxy.ts",
+    "app/**/*.tsx",
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
