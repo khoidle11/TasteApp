@@ -15,6 +15,7 @@ updates:
     open-pull-requests-limit: 5
     groups:
       npm-patch-and-minor:
+        group-by: "dependency-name"
         update-types:
           - "patch"
           - "minor"
