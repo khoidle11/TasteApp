@@ -74,4 +74,27 @@ describe("Prisma migration pipeline", () => {
     expect(migrationSql).toContain('CREATE TABLE "tasteapp_users"');
     expect(migrationSql).toContain('CREATE TABLE "external_auth_identities"');
   });
+
+  it("defines committed Prisma models for user-submitted Restaurants and Locations", () => {
+    const schema = readRepositoryFile("prisma/schema.prisma");
+    const migrationsPath = join(repositoryRoot, "prisma/migrations");
+    const migrationDirectories = readdirSync(migrationsPath).filter((entry) =>
+      existsSync(join(migrationsPath, entry, "migration.sql"))
+    );
+    const migrationSql = migrationDirectories
+      .map((entry) => readRepositoryFile(`prisma/migrations/${entry}/migration.sql`))
+      .join("\n");
+
+    expect(schema).toContain("model Restaurant");
+    expect(schema).toContain("model Location");
+    expect(schema).toContain("enum VerificationState");
+    expect(schema).toContain("enum LocationKind");
+    expect(schema).toContain("enum CatalogRecordSource");
+    expect(schema).toContain('@@map("restaurants")');
+    expect(schema).toContain('@@map("locations")');
+    expect(migrationSql).toContain('CREATE TABLE "restaurants"');
+    expect(migrationSql).toContain('CREATE TABLE "locations"');
+    expect(migrationSql).toContain('CREATE TYPE "VerificationState"');
+    expect(migrationSql).toContain('CREATE TYPE "LocationKind"');
+  });
 });

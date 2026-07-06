@@ -25,15 +25,23 @@ A Restaurant profile managed by an authorized business owner or representative. 
 _Avoid_: Business account, owner account
 
 **Location**:
-A physical place where a Restaurant serves food.
+A physical place where a Restaurant serves food. A Location is identified by place name and location identity, usually including address, website, and maps link unless it is a Food Truck.
 _Avoid_: Address, branch
+
+**Food Truck**:
+A mobile Restaurant or Location whose serving place can change and may not have a stable street address.
+_Avoid_: Mobile restaurant, truck
+
+**Canteen Location**:
+A Location inside a shared food venue such as a mall, market, or food hall where the Restaurant may not have a standalone storefront.
+_Avoid_: Mall restaurant, food court listing
 
 **Geocoded Location**:
 A Location with latitude and longitude coordinates resolved from its address or user input. Geocoded Locations support distance filters and Convenience Mode.
 _Avoid_: Map pin, coordinates
 
 **Chain Candidate**:
-A Restaurant with multiple Locations within a 50-mile radius. Chain Candidates should be flagged for review or special handling because Menu Items, prices, availability, and food quality may vary by Location.
+A Restaurant with multiple Locations within a 50-mile radius. Chain Candidates should be flagged for review or special handling because Menu Items, prices, availability, and food quality may vary by Location, but the chain should not be listed as duplicate Restaurants.
 _Avoid_: Chain, franchise
 
 **Dish Review**:
@@ -132,6 +140,10 @@ _Avoid_: Distance ranking, nearby mode
 A Restaurant, Location, Canonical Dish, Menu Item, RestaurantDish, or Dish Review created by a user. User Submissions are accepted quickly but should not be treated as verified product truth by default.
 _Avoid_: User data, crowd data
 
+**Missing Place Suggestion**:
+A lightweight suggestion that a Restaurant or Location may be missing from TasteApp. Missing Place Suggestions can be sent by signed-out visitors, but they are not catalog records until reviewed or converted through a Catalog Contribution or seeding workflow.
+_Avoid_: Anonymous submission, catalog record
+
 **Catalog Contribution**:
 A user-facing flow for creating or correcting Restaurants, Locations, Canonical Dishes, Menu Items, or RestaurantDishes. Catalog Contributions create User Submissions and should remain lighter-weight than moderator review workflows.
 _Avoid_: Admin edit, data entry
@@ -149,7 +161,7 @@ An AI-supported suggestion that helps identify likely duplicates, canonical nami
 _Avoid_: AI verification, auto-verification
 
 **Submission Nudge**:
-A lightweight user-facing suggestion shown while a user creates a User Submission, such as "Did you mean tonkotsu ramen?". Submission Nudges help prevent duplicates without exposing internal verification confidence, merge queues, or moderation decisions.
+A lightweight user-facing suggestion shown while a user creates or suggests catalog data, such as "Did you mean tonkotsu ramen?". Submission Nudges help prevent duplicates or route Missing Place Suggestions without exposing internal verification confidence, merge queues, or moderation decisions.
 _Avoid_: AI warning, verification prompt
 
 **Report**:
