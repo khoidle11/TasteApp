@@ -305,7 +305,8 @@ TasteApp is planned as a TypeScript-first monorepo:
 - `apps/mobile`: Expo React Native mobile app.
 - `apps/web`: Next.js web app.
 - `apps/api`: TypeScript backend exposing typed REST or tRPC-style use-case endpoints for MVP.
-- `packages/shared`: shared contracts and primitives when genuinely cross-context.
+- `packages/contracts`: shared API contracts and Zod schemas used across the workspace.
+- `packages/tsconfig`: reusable TypeScript config presets for workspace apps and packages.
 - `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
 
 **Key decisions:**
