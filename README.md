@@ -86,13 +86,16 @@ Planned later stack additions:
 
 ## Architecture Direction
 
-TasteApp is planned as a TypeScript-first monorepo:
+TasteApp is a TypeScript-first monorepo with the current workspace split across:
 
-- `apps/mobile`: Expo React Native mobile app.
-- `apps/web`: Next.js web app.
-- `apps/api`: TypeScript backend exposing typed REST or tRPC-style use-case endpoints for MVP.
-- `packages/shared`: shared contracts and primitives when genuinely cross-context.
-- `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
+- `apps/mobile`: Expo React Native mobile app shell.
+- `apps/web`: Next.js web app shell.
+- `apps/api`: TypeScript backend shell exposing typed REST or tRPC-style use-case endpoints for MVP.
+- `packages/contracts`: shared response schemas, DTOs, and other cross-app contracts.
+- `packages/tsconfig`: shared TypeScript base configs for workspace apps and packages.
+- `prisma`: Prisma schema and committed migrations for the shared application database.
+
+When the first AWS deployment surface exists, add an `infra` workspace for CDK rather than treating it as present today.
 
 Key decisions:
 
@@ -134,6 +137,13 @@ Prerequisites:
 - Node.js 24 LTS or newer
 - Corepack enabled. If `corepack enable` cannot write to `/usr/local/bin`, use `corepack enable --install-directory ~/.local/bin`.
 - pnpm 9. This repo pins pnpm through `packageManager` in `package.json`.
+
+Before running Prisma-backed commands or authenticated account flows, load the values from [.env.example](./.env.example) into your local environment. The current repo expects:
+
+- `DATABASE_URL` for the Docker-backed development database.
+- `TEST_DATABASE_URL` for the Docker-backed integration-test database.
+- `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` when exercising Clerk-backed account flows in the API, web shell, or mobile shell.
+- `EXPO_PUBLIC_TASTEAPP_API_URL` when pointing the Expo mobile shell at the local API started by `pnpm --filter @tasteapp/api dev`.
 
 Setup:
 
