@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   SubmitRestaurantWithFirstLocationInputSchema,
   type CatalogSubmissionConfirmation,
@@ -18,8 +20,15 @@ export type PublicCatalogRestaurant = {
 export type CatalogSubmissionRepository = {
   createRestaurantWithFirstLocation(
     input: SubmitRestaurantWithFirstLocationInput,
-    submitter: Submitter
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submissionFingerprintBucket: string
   ): Promise<{ submissionId: string }>;
+  findRecentRestaurantWithFirstLocationSubmission(
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submittedAfter: Date
+  ): Promise<{ submissionId: string } | null>;
   listPublicRestaurants(): Promise<PublicCatalogRestaurant[]>;
 };
 
@@ -32,8 +41,11 @@ export class CatalogSubmissionValidationError extends Error {
 
 type StoredCatalogSubmission = {
   input: SubmitRestaurantWithFirstLocationInput;
+  submissionFingerprint: string;
+  submissionFingerprintBucket: string;
   submissionId: string;
   submitter: Submitter;
+  submittedAt: Date;
   verificationState: VerificationState;
 };
 
@@ -42,18 +54,40 @@ export class InMemoryCatalogSubmissionRepository implements CatalogSubmissionRep
 
   createRestaurantWithFirstLocation(
     input: SubmitRestaurantWithFirstLocationInput,
-    submitter: Submitter
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submissionFingerprintBucket: string
   ): Promise<{ submissionId: string }> {
     const submissionId = `00000000-0000-4000-8000-${String(this.submissions.length + 1).padStart(12, "0")}`;
 
     this.submissions.push({
       input,
+      submissionFingerprint,
+      submissionFingerprintBucket,
       submissionId,
       submitter,
+      submittedAt: new Date(),
       verificationState: "unverified"
     });
 
     return Promise.resolve({ submissionId });
+  }
+
+  findRecentRestaurantWithFirstLocationSubmission(
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submittedAfter: Date
+  ): Promise<{ submissionId: string } | null> {
+    const matchingSubmission = this.submissions.find(
+      (submission) =>
+        submission.submittedAt >= submittedAfter &&
+        submission.submitter.id === submitter.id &&
+        submission.submissionFingerprint === submissionFingerprint
+    );
+
+    return Promise.resolve(
+      matchingSubmission ? { submissionId: matchingSubmission.submissionId } : null
+    );
   }
 
   listPublicRestaurants(): Promise<PublicCatalogRestaurant[]> {
@@ -83,7 +117,22 @@ export async function submitRestaurantWithFirstLocation(
   }
 
   const input = parsedInput.data;
-  const submission = await repository.createRestaurantWithFirstLocation(input, submitter);
+  const submissionFingerprint = catalogSubmissionFingerprint(input);
+  const submissionFingerprintBucket = catalogSubmissionFingerprintBucket();
+  const recentDuplicateSubmission =
+    await repository.findRecentRestaurantWithFirstLocationSubmission(
+      submitter,
+      submissionFingerprint,
+      recentDuplicateWindowStart()
+    );
+  const submission =
+    recentDuplicateSubmission ??
+    (await repository.createRestaurantWithFirstLocation(
+      input,
+      submitter,
+      submissionFingerprint,
+      submissionFingerprintBucket
+    ));
 
   return {
     location: {
@@ -95,6 +144,10 @@ export async function submitRestaurantWithFirstLocation(
     submissionId: submission.submissionId,
     verificationState: "unverified"
   };
+}
+
+function recentDuplicateWindowStart(): Date {
+  return new Date(Date.now() - catalogSubmissionDeduplicationWindowMs);
 }
 
 export function listPublicCatalogRestaurants(
@@ -111,8 +164,13 @@ export function toRestaurantUrlHandle(value: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export function nextRestaurantUrlHandle(restaurantName: string, existingHandles: string[]): string {
-  const baseHandle = toRestaurantUrlHandle(restaurantName);
+export function nextRestaurantUrlHandle(
+  restaurantName: string,
+  existingHandles: string[],
+  fallbackId: string
+): string {
+  const readableHandle = toRestaurantUrlHandle(restaurantName);
+  const baseHandle = readableHandle || `restaurant-${fallbackId.replace(/-/g, "").slice(-12)}`;
   const usedHandles = new Set(existingHandles);
 
   if (!usedHandles.has(baseHandle)) {
@@ -128,4 +186,29 @@ export function nextRestaurantUrlHandle(restaurantName: string, existingHandles:
   }
 
   return candidate;
+}
+
+export function catalogSubmissionFingerprint(
+  input: SubmitRestaurantWithFirstLocationInput
+): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        firstLocation: {
+          address: input.firstLocation.address ?? null,
+          googleMapsUrl: input.firstLocation.googleMapsUrl ?? null,
+          kind: input.firstLocation.kind,
+          name: input.firstLocation.name,
+          websiteUrl: input.firstLocation.websiteUrl ?? null
+        },
+        restaurantName: input.restaurantName
+      })
+    )
+    .digest("hex");
+}
+
+const catalogSubmissionDeduplicationWindowMs = 5 * 60 * 1000;
+
+export function catalogSubmissionFingerprintBucket(date = new Date()): string {
+  return String(Math.floor(date.getTime() / catalogSubmissionDeduplicationWindowMs));
 }

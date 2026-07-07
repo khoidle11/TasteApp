@@ -114,7 +114,7 @@ function CatalogSubmissionPanel({ getAuthToken }: CatalogSubmissionPanelProps) {
 
       setIsSubmitting(true);
 
-      const response = await fetch(`${apiUrl}/catalog/submissions`, {
+      const response = await fetch(`${apiUrl}/v1/catalog/submissions`, {
         body: JSON.stringify(payload),
         headers: {
           authorization: `Bearer ${token}`,

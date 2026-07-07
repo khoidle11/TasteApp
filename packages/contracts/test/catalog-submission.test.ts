@@ -30,6 +30,51 @@ describe("catalog submission contracts", () => {
     });
   });
 
+  it("rejects whitespace-only Restaurant and Location names", () => {
+    const result = SubmitRestaurantWithFirstLocationInputSchema.safeParse({
+      firstLocation: {
+        address: "123 Pho Lane, Houston, TX",
+        kind: "STANDALONE",
+        name: "   "
+      },
+      restaurantName: "   "
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("requires an address unless the Location is a Food Truck", () => {
+    const result = SubmitRestaurantWithFirstLocationInputSchema.safeParse({
+      firstLocation: {
+        kind: "CANTEEN",
+        name: "Taco Palace at North Mall"
+      },
+      restaurantName: "Taco Palace"
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("allows Food Truck submissions without a stable address", () => {
+    expect(
+      SubmitRestaurantWithFirstLocationInputSchema.parse({
+        firstLocation: {
+          kind: "FOOD_TRUCK",
+          name: "Rolling Ramen Truck",
+          websiteUrl: "https://rollingramen.example"
+        },
+        restaurantName: "Rolling Ramen"
+      })
+    ).toEqual({
+      firstLocation: {
+        kind: "FOOD_TRUCK",
+        name: "Rolling Ramen Truck",
+        websiteUrl: "https://rollingramen.example"
+      },
+      restaurantName: "Rolling Ramen"
+    });
+  });
+
   it("uses confirmation DTOs instead of public Restaurant DTOs", () => {
     expect(
       CatalogSubmissionConfirmationSchema.parse({

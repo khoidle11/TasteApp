@@ -30,13 +30,41 @@ type RouteRequestOptions = {
   authContext?: AuthenticatedRequestContext;
   body?: unknown;
   catalogSubmissionRepository?: CatalogSubmissionRepository;
+  logger?: Pick<Console, "error">;
+  rateLimiter?: RateLimiter;
 };
+
+class RequestBodyTooLargeError extends Error {
+  constructor() {
+    super("Request body too large");
+    this.name = "RequestBodyTooLargeError";
+  }
+}
+
+class InvalidJsonRequestBodyError extends Error {
+  constructor() {
+    super("Invalid JSON request body");
+    this.name = "InvalidJsonRequestBodyError";
+  }
+}
+
+type RateLimiter = {
+  consume(key: string, limit: number, windowMs: number): boolean;
+};
+
+const maxJsonBodyBytes = 64 * 1024;
+const catalogSubmissionPath = "/v1/catalog/submissions";
+const catalogSubmissionRateLimit = 10;
+const catalogSubmissionRateLimitWindowMs = 60 * 1000;
 
 export async function routeRequest(
   method: string | undefined,
   url: string | undefined,
   options: RouteRequestOptions = {}
 ): Promise<JsonResponse> {
+  const logger = options.logger ?? console;
+  const rateLimiter = options.rateLimiter ?? inMemoryRateLimiter;
+
   if (method === "GET" && url === "/health") {
     return {
       body: getHealthResponse(),
@@ -65,7 +93,9 @@ export async function routeRequest(
           }),
           statusCode: 200
         };
-      } catch {
+      } catch (error) {
+        logger.error("Account route failed", { error });
+
         return {
           body: {
             error: "Internal server error"
@@ -83,13 +113,28 @@ export async function routeRequest(
     };
   }
 
-  if (method === "POST" && url === "/catalog/submissions") {
+  if (method === "POST" && url === catalogSubmissionPath) {
     if (!options.authContext) {
       return {
         body: {
           error: "Authentication required"
         },
         statusCode: 401
+      };
+    }
+
+    if (
+      !rateLimiter.consume(
+        catalogSubmissionRateLimitKey(options.authContext),
+        catalogSubmissionRateLimit,
+        catalogSubmissionRateLimitWindowMs
+      )
+    ) {
+      return {
+        body: {
+          error: "Too many requests"
+        },
+        statusCode: 429
       };
     }
 
@@ -118,6 +163,8 @@ export async function routeRequest(
         };
       }
 
+      logger.error("Catalog submission route failed", { error });
+
       return {
         body: {
           error: "Internal server error"
@@ -136,7 +183,28 @@ export async function routeRequest(
 }
 
 export function handleRequest(request: IncomingMessage, response: ServerResponse): void {
-  void handleRequestAsync(request, response).catch(() => {
+  void handleRequestAsync(request, response).catch((error: unknown) => {
+    if (error instanceof RequestBodyTooLargeError) {
+      writeJsonResponse(response, {
+        body: {
+          error: error.message
+        },
+        statusCode: 413
+      });
+      return;
+    }
+
+    if (error instanceof InvalidJsonRequestBodyError) {
+      writeJsonResponse(response, {
+        body: {
+          error: error.message
+        },
+        statusCode: 400
+      });
+      return;
+    }
+
+    console.error("HTTP request failed", { error });
     writeJsonResponse(response, {
       body: {
         error: "Internal server error"
@@ -168,7 +236,7 @@ async function handleRequestAsync(
 function requiresAuthContext(method: string | undefined, url: string | undefined): boolean {
   return (
     (method === "GET" && url === "/account/me") ||
-    (method === "POST" && url === "/catalog/submissions")
+    (method === "POST" && url === catalogSubmissionPath)
   );
 }
 
@@ -181,14 +249,53 @@ function writeJsonResponse(response: ServerResponse, result: JsonResponse): void
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
   const chunks: Uint8Array[] = [];
+  let byteLength = 0;
 
   for await (const chunk of request as AsyncIterable<Buffer | string>) {
-    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    const buffer = typeof chunk === "string" ? Buffer.from(chunk) : chunk;
+    byteLength += buffer.byteLength;
+
+    if (byteLength > maxJsonBodyBytes) {
+      throw new RequestBodyTooLargeError();
+    }
+
+    chunks.push(buffer);
   }
 
   if (chunks.length === 0) {
     return undefined;
   }
 
-  return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
+  } catch {
+    throw new InvalidJsonRequestBodyError();
+  }
 }
+
+function catalogSubmissionRateLimitKey(authContext: AuthenticatedRequestContext): string {
+  return `catalog-submissions:${authContext.provider}:${authContext.providerSubject}`;
+}
+
+class InMemoryRateLimiter implements RateLimiter {
+  private readonly requestsByKey = new Map<string, number[]>();
+
+  consume(key: string, limit: number, windowMs: number): boolean {
+    const now = Date.now();
+    const windowStart = now - windowMs;
+    const recentRequests = (this.requestsByKey.get(key) ?? []).filter(
+      (timestamp) => timestamp > windowStart
+    );
+
+    if (recentRequests.length >= limit) {
+      this.requestsByKey.set(key, recentRequests);
+      return false;
+    }
+
+    recentRequests.push(now);
+    this.requestsByKey.set(key, recentRequests);
+    return true;
+  }
+}
+
+const inMemoryRateLimiter = new InMemoryRateLimiter();

@@ -8,21 +8,36 @@ export const VerificationStateSchema = z.enum(["unverified", "verified"]);
 
 export type VerificationState = z.infer<typeof VerificationStateSchema>;
 
-export const SubmitRestaurantWithFirstLocationInputSchema = z.object({
-  firstLocation: z.object(
-    {
-      address: z.string().min(1).optional(),
-      googleMapsUrl: z.url().optional(),
-      kind: LocationKindSchema,
-      name: z.string().min(1),
-      websiteUrl: z.url().optional()
-    },
-    {
-      error: "First Location is required."
+const OptionalTrimmedUrlSchema = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.url().optional()
+);
+
+export const SubmitRestaurantWithFirstLocationInputSchema = z
+  .object({
+    firstLocation: z.object(
+      {
+        address: z.string().trim().min(1).optional(),
+        googleMapsUrl: OptionalTrimmedUrlSchema,
+        kind: LocationKindSchema,
+        name: z.string().trim().min(1, { error: "Location name is required." }),
+        websiteUrl: OptionalTrimmedUrlSchema
+      },
+      {
+        error: "First Location is required."
+      }
+    ),
+    restaurantName: z.string().trim().min(1, { error: "Restaurant name is required." })
+  })
+  .superRefine((input, context) => {
+    if (input.firstLocation.kind !== "FOOD_TRUCK" && !input.firstLocation.address) {
+      context.addIssue({
+        code: "custom",
+        message: "Address is required unless this is a Food Truck.",
+        path: ["firstLocation", "address"]
+      });
     }
-  ),
-  restaurantName: z.string().min(1)
-});
+  });
 
 export type SubmitRestaurantWithFirstLocationInput = z.infer<
   typeof SubmitRestaurantWithFirstLocationInputSchema

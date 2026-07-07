@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { randomUUID } from "node:crypto";
 
 import type { SubmitRestaurantWithFirstLocationInput } from "@tasteapp/contracts";
 
@@ -15,30 +16,101 @@ export class PrismaCatalogSubmissionRepository implements CatalogSubmissionRepos
 
   async createRestaurantWithFirstLocation(
     input: SubmitRestaurantWithFirstLocationInput,
-    submitter: Submitter
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submissionFingerprintBucket: string
   ): Promise<{ submissionId: string }> {
-    const baseUrlHandle = toRestaurantUrlHandle(input.restaurantName);
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        return await this.createRestaurantWithFirstLocationAttempt(
+          input,
+          submitter,
+          submissionFingerprint,
+          submissionFingerprintBucket
+        );
+      } catch (error) {
+        if (isUniqueSubmissionFingerprintError(error)) {
+          const existingSubmission = await this.findSubmissionByFingerprint(
+            submitter,
+            submissionFingerprint,
+            submissionFingerprintBucket
+          );
+
+          if (existingSubmission) {
+            return existingSubmission;
+          }
+        }
+
+        if (!isUniqueUrlHandleError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    throw new Error("Unable to allocate a unique Restaurant URL handle.");
+  }
+
+  async findRecentRestaurantWithFirstLocationSubmission(
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submittedAfter: Date
+  ): Promise<{ submissionId: string } | null> {
+    const restaurant = await this.prisma.restaurant.findFirst({
+      orderBy: {
+        createdAt: "desc"
+      },
+      select: {
+        id: true
+      },
+      where: {
+        createdAt: {
+          gte: submittedAfter
+        },
+        submissionFingerprint,
+        submittedByTasteAppUserId: submitter.id,
+        verificationState: "unverified"
+      }
+    });
+
+    return restaurant ? { submissionId: restaurant.id } : null;
+  }
+
+  private async createRestaurantWithFirstLocationAttempt(
+    input: SubmitRestaurantWithFirstLocationInput,
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submissionFingerprintBucket: string
+  ): Promise<{ submissionId: string }> {
+    const restaurantId = randomUUID();
+    const readableUrlHandle = toRestaurantUrlHandle(input.restaurantName);
     const existingRestaurants = await this.prisma.restaurant.findMany({
       select: {
         urlHandle: true
       },
-      where: {
-        OR: [
-          {
-            urlHandle: baseUrlHandle
-          },
-          {
+      where: readableUrlHandle
+        ? {
+            OR: [
+              {
+                urlHandle: readableUrlHandle
+              },
+              {
+                urlHandle: {
+                  startsWith: `${readableUrlHandle}-`
+                }
+              }
+            ]
+          }
+        : {
             urlHandle: {
-              startsWith: `${baseUrlHandle}-`
+              startsWith: "restaurant-"
             }
           }
-        ]
-      }
     });
     const restaurant = await this.prisma.restaurant.create({
       data: {
         createdByKind: "USER",
         displayName: input.restaurantName,
+        id: restaurantId,
         locations: {
           create: {
             address: input.firstLocation.address,
@@ -53,10 +125,13 @@ export class PrismaCatalogSubmissionRepository implements CatalogSubmissionRepos
             websiteUrl: input.firstLocation.websiteUrl
           }
         },
+        submissionFingerprint,
+        submissionFingerprintBucket,
         submittedByTasteAppUserId: submitter.id,
         urlHandle: nextRestaurantUrlHandle(
           input.restaurantName,
-          existingRestaurants.map((existingRestaurant) => existingRestaurant.urlHandle)
+          existingRestaurants.map((existingRestaurant) => existingRestaurant.urlHandle),
+          restaurantId
         ),
         verificationState: "unverified"
       },
@@ -68,6 +143,27 @@ export class PrismaCatalogSubmissionRepository implements CatalogSubmissionRepos
     return {
       submissionId: restaurant.id
     };
+  }
+
+  private async findSubmissionByFingerprint(
+    submitter: Submitter,
+    submissionFingerprint: string,
+    submissionFingerprintBucket: string
+  ): Promise<{ submissionId: string } | null> {
+    const restaurant = await this.prisma.restaurant.findUnique({
+      select: {
+        id: true
+      },
+      where: {
+        submittedByTasteAppUserId_submissionFingerprint_submissionFingerprintBucket: {
+          submissionFingerprint,
+          submissionFingerprintBucket,
+          submittedByTasteAppUserId: submitter.id
+        }
+      }
+    });
+
+    return restaurant ? { submissionId: restaurant.id } : null;
   }
 
   async listPublicRestaurants(): Promise<PublicCatalogRestaurant[]> {
@@ -91,6 +187,26 @@ export class PrismaCatalogSubmissionRepository implements CatalogSubmissionRepos
       urlHandle: restaurant.urlHandle
     }));
   }
+}
+
+function isUniqueUrlHandleError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("urlHandle")
+  );
+}
+
+function isUniqueSubmissionFingerprintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("submittedByTasteAppUserId") &&
+    error.meta.target.includes("submissionFingerprint") &&
+    error.meta.target.includes("submissionFingerprintBucket")
+  );
 }
 
 const prisma = new PrismaClient();

@@ -90,11 +90,21 @@ describe("Prisma migration pipeline", () => {
     expect(schema).toContain("enum VerificationState");
     expect(schema).toContain("enum LocationKind");
     expect(schema).toContain("enum CatalogRecordSource");
+    expect(schema).toContain("submissionFingerprint");
+    expect(schema).toContain("submissionFingerprintBucket");
     expect(schema).toContain('@@map("restaurants")');
     expect(schema).toContain('@@map("locations")');
+    expect(schema).toContain(
+      "@@unique([submittedByTasteAppUserId, submissionFingerprint, submissionFingerprintBucket])"
+    );
     expect(migrationSql).toContain('CREATE TABLE "restaurants"');
     expect(migrationSql).toContain('CREATE TABLE "locations"');
     expect(migrationSql).toContain('CREATE TYPE "VerificationState"');
     expect(migrationSql).toContain('CREATE TYPE "LocationKind"');
+    expect(migrationSql).toContain('"submissionFingerprint" TEXT');
+    expect(migrationSql).toContain('"submissionFingerprintBucket" TEXT');
+    expect(migrationSql).toContain(
+      'CREATE UNIQUE INDEX "restaurants_submittedByTasteAppUserId_submissionFingerprint_key"'
+    );
   });
 });
