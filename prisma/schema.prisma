@@ -8,12 +8,14 @@ datasource db {
 }
 
 model TasteAppUser {
-  id                 String                 @id @default(uuid()) @db.Uuid
-  displayName        String?
-  primaryEmail       String?
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  externalIdentities ExternalAuthIdentity[]
+  id                   String                 @id @default(uuid()) @db.Uuid
+  displayName          String?
+  primaryEmail         String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  externalIdentities   ExternalAuthIdentity[]
+  submittedLocations   Location[]             @relation("LocationSubmitter")
+  submittedRestaurants Restaurant[]           @relation("RestaurantSubmitter")
 
   @@map("tasteapp_users")
 }
@@ -31,4 +33,65 @@ model ExternalAuthIdentity {
   @@unique([provider, providerSubject])
   @@index([tasteAppUserId])
   @@map("external_auth_identities")
+}
+
+enum VerificationState {
+  unverified
+  verified
+}
+
+enum LocationKind {
+  STANDALONE
+  FOOD_TRUCK
+  CANTEEN
+}
+
+enum CatalogRecordSource {
+  USER
+  ADMIN
+  SEED
+  SYSTEM
+}
+
+model Restaurant {
+  id                          String              @id @default(uuid()) @db.Uuid
+  displayName                 String
+  urlHandle                   String              @unique
+  verificationState           VerificationState   @default(unverified)
+  createdByKind               CatalogRecordSource @default(USER)
+  submissionFingerprint       String?
+  submissionFingerprintBucket String?
+  submittedByTasteAppUserId   String?             @db.Uuid
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  locations                   Location[]
+  submittedByTasteAppUser     TasteAppUser?       @relation("RestaurantSubmitter", fields: [submittedByTasteAppUserId], references: [id], onDelete: SetNull)
+
+  @@unique([submittedByTasteAppUserId, submissionFingerprint, submissionFingerprintBucket])
+  @@index([verificationState])
+  @@index([submittedByTasteAppUserId])
+  @@map("restaurants")
+}
+
+model Location {
+  id                        String              @id @default(uuid()) @db.Uuid
+  restaurantId              String              @db.Uuid
+  kind                      LocationKind
+  displayName               String
+  address                   String?
+  googleMapsUrl             String?
+  websiteUrl                String?
+  serviceArea               String?
+  verificationState         VerificationState   @default(unverified)
+  createdByKind             CatalogRecordSource @default(USER)
+  submittedByTasteAppUserId String?             @db.Uuid
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  restaurant                Restaurant          @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  submittedByTasteAppUser   TasteAppUser?       @relation("LocationSubmitter", fields: [submittedByTasteAppUserId], references: [id], onDelete: SetNull)
+
+  @@index([restaurantId])
+  @@index([verificationState])
+  @@index([submittedByTasteAppUserId])
+  @@map("locations")
 }

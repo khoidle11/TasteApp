@@ -5,6 +5,16 @@ export {
   type TasteAppUserDto
 } from "./account.js";
 export {
+  CatalogSubmissionConfirmationSchema,
+  LocationKindSchema,
+  SubmitRestaurantWithFirstLocationInputSchema,
+  VerificationStateSchema,
+  type CatalogSubmissionConfirmation,
+  type LocationKind,
+  type SubmitRestaurantWithFirstLocationInput,
+  type VerificationState
+} from "./catalog-submission.js";
+export {
   HealthResponseSchema,
   ReadinessCheckSchema,
   ReadinessResponseSchema,

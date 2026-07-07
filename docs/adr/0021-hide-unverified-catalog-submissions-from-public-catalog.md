@@ -1,0 +1,3 @@
+# Hide unverified catalog submissions from the public catalog
+
+TasteApp will accept user-submitted Restaurants and Locations quickly, but normal public catalog, search, list, and detail surfaces should exclude unverified catalog submissions by default. Prelaunch starter catalog data should use a separate feature-flagged seeding or trusted admin path so TasteApp can launch with useful public data without treating ordinary unverified User Submissions as product truth. Records created through an explicit trusted path may start verified, while ordinary Catalog Contributions still start unverified.
