@@ -300,13 +300,16 @@ Strong success criteria let agents loop independently. Weak criteria such as "ma
 
 ## Architecture Direction
 
-TasteApp is planned as a TypeScript-first monorepo:
+TasteApp is a TypeScript-first monorepo with the current workspace split across:
 
-- `apps/mobile`: Expo React Native mobile app.
-- `apps/web`: Next.js web app.
-- `apps/api`: TypeScript backend exposing typed REST or tRPC-style use-case endpoints for MVP.
-- `packages/shared`: shared contracts and primitives when genuinely cross-context.
-- `infra`: AWS CDK infrastructure when the first AWS deployment is needed.
+- `apps/mobile`: Expo React Native mobile app shell.
+- `apps/web`: Next.js web app shell.
+- `apps/api`: TypeScript backend shell exposing typed REST or tRPC-style use-case endpoints for MVP.
+- `packages/contracts`: shared response schemas, DTOs, and other cross-app contracts.
+- `packages/tsconfig`: shared TypeScript base configs for workspace apps and packages.
+- `prisma`: Prisma schema and committed migrations for the shared application database.
+
+When the first AWS deployment surface exists, add an `infra` workspace for CDK rather than treating it as present today.
 
 **Key decisions:**
 
