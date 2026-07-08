@@ -174,18 +174,52 @@ export class PrismaCatalogSubmissionRepository implements CatalogSubmissionRepos
       select: {
         displayName: true,
         id: true,
+        locations: {
+          orderBy: {
+            createdAt: "asc"
+          },
+          select: {
+            displayName: true,
+            latitude: true,
+            longitude: true
+          },
+          take: 1,
+          where: {
+            verificationState: "verified"
+          }
+        },
         urlHandle: true
       },
       where: {
+        locations: {
+          some: {
+            verificationState: "verified"
+          }
+        },
         verificationState: "verified"
       }
     });
 
-    return restaurants.map((restaurant) => ({
-      id: restaurant.id,
-      name: restaurant.displayName,
-      urlHandle: restaurant.urlHandle
-    }));
+    return restaurants.flatMap((restaurant) => {
+      const location = restaurant.locations[0];
+
+      if (!location) {
+        return [];
+      }
+
+      return [
+        {
+          id: restaurant.id,
+          location: {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            name: location.displayName
+          },
+          name: restaurant.displayName,
+          urlHandle: restaurant.urlHandle
+        }
+      ];
+    });
   }
 }
 

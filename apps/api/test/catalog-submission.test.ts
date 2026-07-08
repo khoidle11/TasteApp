@@ -10,6 +10,10 @@ import {
 } from "../src/catalog-submission.js";
 import { routeRequest } from "../src/http.js";
 import { InMemoryTasteAppUserRepository } from "../src/identity.js";
+import {
+  InMemoryGeocodingCacheRepository,
+  type GeocodingProvider
+} from "../src/location-discovery.js";
 
 describe("submitRestaurantWithFirstLocation", () => {
   it("returns an unverified confirmation when a signed-in TasteApp User submits a Restaurant with its first Location", async () => {
@@ -359,6 +363,293 @@ describe("API catalog submission routes", () => {
           restaurantName: "Pho Real"
         },
         catalogSubmissionRepository: new InMemoryCatalogSubmissionRepository(),
+        rateLimiter
+      })
+    ).resolves.toEqual({
+      body: {
+        error: "Too many requests"
+      },
+      statusCode: 429
+    });
+  });
+
+  it("returns public Restaurants with distance labels from a Search Location", async () => {
+    await expect(
+      routeRequest(
+        "GET",
+        "/v1/catalog/restaurants?searchLatitude=29.7604&searchLongitude=-95.3698",
+        {
+          catalogSubmissionRepository: {
+            createRestaurantWithFirstLocation: () =>
+              Promise.reject(new Error("not used by this route")),
+            findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+            listPublicRestaurants: () =>
+              Promise.resolve([
+                {
+                  id: "00000000-0000-4000-8000-000000000001",
+                  location: {
+                    latitude: 29.742,
+                    longitude: -95.391,
+                    name: "Pho Real - Midtown"
+                  },
+                  name: "Pho Real",
+                  urlHandle: "pho-real"
+                },
+                {
+                  id: "00000000-0000-4000-8000-000000000002",
+                  location: {
+                    latitude: 29.7599,
+                    longitude: -95.3584,
+                    name: "Taco Palace - Downtown"
+                  },
+                  name: "Taco Palace",
+                  urlHandle: "taco-palace"
+                }
+              ])
+          }
+        }
+      )
+    ).resolves.toEqual({
+      body: {
+        restaurants: [
+          {
+            distance: {
+              label: "~2 mi",
+              miles: 1.8
+            },
+            id: "00000000-0000-4000-8000-000000000001",
+            location: {
+              latitude: 29.742,
+              longitude: -95.391,
+              name: "Pho Real - Midtown"
+            },
+            name: "Pho Real",
+            urlHandle: "pho-real"
+          },
+          {
+            distance: {
+              label: "~1 mi",
+              miles: 0.68
+            },
+            id: "00000000-0000-4000-8000-000000000002",
+            location: {
+              latitude: 29.7599,
+              longitude: -95.3584,
+              name: "Taco Palace - Downtown"
+            },
+            name: "Taco Palace",
+            urlHandle: "taco-palace"
+          }
+        ]
+      },
+      statusCode: 200
+    });
+  });
+
+  it("keeps public Restaurants without coordinates in the list without distance labels", async () => {
+    await expect(
+      routeRequest(
+        "GET",
+        "/v1/catalog/restaurants?searchLatitude=29.7604&searchLongitude=-95.3698",
+        {
+          catalogSubmissionRepository: {
+            createRestaurantWithFirstLocation: () =>
+              Promise.reject(new Error("not used by this route")),
+            findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+            listPublicRestaurants: () =>
+              Promise.resolve([
+                {
+                  id: "00000000-0000-4000-8000-000000000001",
+                  location: {
+                    name: "Rolling Ramen Truck"
+                  },
+                  name: "Rolling Ramen",
+                  urlHandle: "rolling-ramen"
+                }
+              ])
+          }
+        }
+      )
+    ).resolves.toEqual({
+      body: {
+        restaurants: [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            location: {
+              name: "Rolling Ramen Truck"
+            },
+            name: "Rolling Ramen",
+            urlHandle: "rolling-ramen"
+          }
+        ]
+      },
+      statusCode: 200
+    });
+  });
+
+  it("geocodes typed Search Location fallback through the cache for public Restaurant distance labels", async () => {
+    const geocodingCacheRepository = new InMemoryGeocodingCacheRepository();
+    const providerCalls: string[] = [];
+    const geocodingProvider: GeocodingProvider = {
+      id: "fake-maps",
+      geocode: (query) => {
+        providerCalls.push(query);
+
+        return Promise.resolve({
+          displayLabel: "Houston, TX",
+          latitude: 29.7604,
+          longitude: -95.3698,
+          providerPlaceId: "houston-tx"
+        });
+      }
+    };
+    const catalogSubmissionRepository = {
+      createRestaurantWithFirstLocation: () => Promise.reject(new Error("not used by this route")),
+      findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+      listPublicRestaurants: () =>
+        Promise.resolve([
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            location: {
+              latitude: 29.742,
+              longitude: -95.391,
+              name: "Pho Real - Midtown"
+            },
+            name: "Pho Real",
+            urlHandle: "pho-real"
+          }
+        ])
+    };
+
+    const firstResponse = await routeRequest("GET", "/v1/catalog/restaurants?searchQuery=Houston", {
+      catalogSubmissionRepository,
+      geocodingCacheRepository,
+      geocodingProvider
+    });
+    const secondResponse = await routeRequest(
+      "GET",
+      "/v1/catalog/restaurants?searchQuery=%20houston%20",
+      {
+        catalogSubmissionRepository,
+        geocodingCacheRepository,
+        geocodingProvider
+      }
+    );
+
+    expect(secondResponse).toEqual(firstResponse);
+    expect(firstResponse).toEqual({
+      body: {
+        restaurants: [
+          {
+            distance: {
+              label: "~2 mi",
+              miles: 1.8
+            },
+            id: "00000000-0000-4000-8000-000000000001",
+            location: {
+              latitude: 29.742,
+              longitude: -95.391,
+              name: "Pho Real - Midtown"
+            },
+            name: "Pho Real",
+            urlHandle: "pho-real"
+          }
+        ]
+      },
+      statusCode: 200
+    });
+    expect(providerCalls).toEqual(["houston"]);
+  });
+
+  it("rejects invalid Search Location coordinates before calculating distance labels", async () => {
+    await expect(
+      routeRequest("GET", "/v1/catalog/restaurants?searchLatitude=999&searchLongitude=-95.3698", {
+        catalogSubmissionRepository: {
+          createRestaurantWithFirstLocation: () =>
+            Promise.reject(new Error("not used by this route")),
+          findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+          listPublicRestaurants: () => Promise.resolve([])
+        }
+      })
+    ).resolves.toEqual({
+      body: {
+        error: "Search Location is invalid."
+      },
+      statusCode: 400
+    });
+  });
+
+  it("returns public Restaurants without distance labels when typed geocoding fails", async () => {
+    const loggedErrors: [string, { error: unknown }][] = [];
+
+    await expect(
+      routeRequest("GET", "/v1/catalog/restaurants?searchQuery=Houston", {
+        catalogSubmissionRepository: {
+          createRestaurantWithFirstLocation: () => Promise.reject(new Error("not used")),
+          findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+          listPublicRestaurants: () =>
+            Promise.resolve([
+              {
+                id: "00000000-0000-4000-8000-000000000001",
+                location: {
+                  latitude: 29.742,
+                  longitude: -95.391,
+                  name: "Pho Real - Midtown"
+                },
+                name: "Pho Real",
+                urlHandle: "pho-real"
+              }
+            ])
+        },
+        geocodingCacheRepository: new InMemoryGeocodingCacheRepository(),
+        geocodingProvider: {
+          id: "failing-maps",
+          geocode: () => Promise.reject(new Error("provider unavailable"))
+        },
+        logger: {
+          error: (message: string, context: { error: unknown }) => {
+            loggedErrors.push([message, context]);
+          }
+        }
+      })
+    ).resolves.toEqual({
+      body: {
+        restaurants: [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            location: {
+              latitude: 29.742,
+              longitude: -95.391,
+              name: "Pho Real - Midtown"
+            },
+            name: "Pho Real",
+            urlHandle: "pho-real"
+          }
+        ]
+      },
+      statusCode: 200
+    });
+    expect(loggedErrors).toHaveLength(1);
+    expect(loggedErrors[0]?.[0]).toBe("Typed Search Location geocoding failed");
+  });
+
+  it("rate limits typed Search Location geocoding on public Restaurant lists", async () => {
+    const rateLimiter = {
+      consume: () => false
+    };
+
+    await expect(
+      routeRequest("GET", "/v1/catalog/restaurants?searchQuery=Houston", {
+        catalogSubmissionRepository: {
+          createRestaurantWithFirstLocation: () => Promise.reject(new Error("not used")),
+          findRecentRestaurantWithFirstLocationSubmission: () => Promise.resolve(null),
+          listPublicRestaurants: () => Promise.resolve([])
+        },
+        geocodingCacheRepository: new InMemoryGeocodingCacheRepository(),
+        geocodingProvider: {
+          id: "fake-maps",
+          geocode: () => Promise.resolve(null)
+        },
         rateLimiter
       })
     ).resolves.toEqual({

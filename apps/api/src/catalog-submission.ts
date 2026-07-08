@@ -13,6 +13,11 @@ export type Submitter = {
 
 export type PublicCatalogRestaurant = {
   id: string;
+  location: {
+    latitude?: number | null;
+    longitude?: number | null;
+    name: string;
+  };
   name: string;
   urlHandle: string;
 };
@@ -96,6 +101,9 @@ export class InMemoryCatalogSubmissionRepository implements CatalogSubmissionRep
         .filter((submission) => submission.verificationState === "verified")
         .map((submission) => ({
           id: submission.submissionId,
+          location: {
+            name: submission.input.firstLocation.name
+          },
           name: submission.input.restaurantName,
           urlHandle: toRestaurantUrlHandle(submission.input.restaurantName)
         }))

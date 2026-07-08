@@ -2,7 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import {
   CatalogSubmissionConfirmationSchema,
-  CurrentTasteAppUserResponseSchema
+  CurrentTasteAppUserResponseSchema,
+  PublicCatalogRestaurantListResponseSchema,
+  SearchLocationInputSchema,
+  type SearchLocationInput
 } from "@tasteapp/contracts";
 
 import {
@@ -17,8 +20,15 @@ import {
   type AuthenticatedRequestContext,
   type TasteAppUserRepository
 } from "./identity.js";
+import {
+  listPublicRestaurantsForDiscovery,
+  type GeocodingCacheRepository,
+  type GeocodingProvider
+} from "./location-discovery.js";
+import { createGoogleGeocodingProviderFromEnvironment } from "./google-geocoding-provider.js";
 import { prismaTasteAppUserRepository } from "./prisma-tasteapp-user-repository.js";
 import { prismaCatalogSubmissionRepository } from "./prisma-catalog-submission-repository.js";
+import { prismaGeocodingCacheRepository } from "./prisma-location-discovery-repository.js";
 
 type JsonResponse = {
   body: unknown;
@@ -30,6 +40,8 @@ type RouteRequestOptions = {
   authContext?: AuthenticatedRequestContext;
   body?: unknown;
   catalogSubmissionRepository?: CatalogSubmissionRepository;
+  geocodingCacheRepository?: GeocodingCacheRepository;
+  geocodingProvider?: GeocodingProvider;
   logger?: Pick<Console, "error">;
   rateLimiter?: RateLimiter;
 };
@@ -48,14 +60,25 @@ class InvalidJsonRequestBodyError extends Error {
   }
 }
 
+class SearchLocationValidationError extends Error {
+  constructor() {
+    super("Search Location is invalid.");
+    this.name = "SearchLocationValidationError";
+  }
+}
+
 type RateLimiter = {
   consume(key: string, limit: number, windowMs: number): boolean;
 };
 
 const maxJsonBodyBytes = 64 * 1024;
+const publicCatalogRestaurantsPath = "/v1/catalog/restaurants";
 const catalogSubmissionPath = "/v1/catalog/submissions";
 const catalogSubmissionRateLimit = 10;
 const catalogSubmissionRateLimitWindowMs = 60 * 1000;
+const publicCatalogGeocodingRateLimit = 30;
+const publicCatalogGeocodingRateLimitWindowMs = 60 * 1000;
+const googleGeocodingProvider = createGoogleGeocodingProviderFromEnvironment();
 
 export async function routeRequest(
   method: string | undefined,
@@ -64,22 +87,23 @@ export async function routeRequest(
 ): Promise<JsonResponse> {
   const logger = options.logger ?? console;
   const rateLimiter = options.rateLimiter ?? inMemoryRateLimiter;
+  const parsedUrl = parseRequestUrl(url);
 
-  if (method === "GET" && url === "/health") {
+  if (method === "GET" && parsedUrl.pathname === "/health") {
     return {
       body: getHealthResponse(),
       statusCode: 200
     };
   }
 
-  if (method === "GET" && url === "/health/ready") {
+  if (method === "GET" && parsedUrl.pathname === "/health/ready") {
     return {
       body: getReadinessResponse(),
       statusCode: 200
     };
   }
 
-  if (method === "GET" && url === "/account/me") {
+  if (method === "GET" && parsedUrl.pathname === "/account/me") {
     if (options.authContext) {
       try {
         const user = await resolveCurrentTasteAppUser(
@@ -113,7 +137,57 @@ export async function routeRequest(
     };
   }
 
-  if (method === "POST" && url === catalogSubmissionPath) {
+  if (method === "GET" && parsedUrl.pathname === publicCatalogRestaurantsPath) {
+    let searchLocationInput: SearchLocationInput | null;
+
+    try {
+      searchLocationInput = searchLocationInputFromQuery(parsedUrl.searchParams);
+    } catch (error) {
+      if (error instanceof SearchLocationValidationError) {
+        return {
+          body: {
+            error: error.message
+          },
+          statusCode: 400
+        };
+      }
+
+      throw error;
+    }
+
+    if (
+      searchLocationInput?.source === "typed" &&
+      !rateLimiter.consume(
+        publicCatalogGeocodingRateLimitKey(),
+        publicCatalogGeocodingRateLimit,
+        publicCatalogGeocodingRateLimitWindowMs
+      )
+    ) {
+      return {
+        body: {
+          error: "Too many requests"
+        },
+        statusCode: 429
+      };
+    }
+
+    const responseRestaurants = await listPublicRestaurantsForDiscovery({
+      geocodingCacheRepository: options.geocodingCacheRepository ?? prismaGeocodingCacheRepository,
+      geocodingProvider: options.geocodingProvider ?? googleGeocodingProvider,
+      logger,
+      repository: options.catalogSubmissionRepository ?? prismaCatalogSubmissionRepository,
+      searchLocationInput
+    });
+
+    return {
+      body: PublicCatalogRestaurantListResponseSchema.parse({
+        restaurants: responseRestaurants
+      }),
+      statusCode: 200
+    };
+  }
+
+  if (method === "POST" && parsedUrl.pathname === catalogSubmissionPath) {
     if (!options.authContext) {
       return {
         body: {
@@ -234,9 +308,11 @@ async function handleRequestAsync(
 }
 
 function requiresAuthContext(method: string | undefined, url: string | undefined): boolean {
+  const parsedUrl = parseRequestUrl(url);
+
   return (
-    (method === "GET" && url === "/account/me") ||
-    (method === "POST" && url === catalogSubmissionPath)
+    (method === "GET" && parsedUrl.pathname === "/account/me") ||
+    (method === "POST" && parsedUrl.pathname === catalogSubmissionPath)
   );
 }
 
@@ -275,6 +351,54 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
 
 function catalogSubmissionRateLimitKey(authContext: AuthenticatedRequestContext): string {
   return `catalog-submissions:${authContext.provider}:${authContext.providerSubject}`;
+}
+
+function publicCatalogGeocodingRateLimitKey(): string {
+  return "public-catalog-geocoding";
+}
+
+function parseRequestUrl(url: string | undefined): URL {
+  return new URL(url ?? "/", "http://tasteapp.local");
+}
+
+function searchLocationInputFromQuery(searchParams: URLSearchParams): SearchLocationInput | null {
+  const searchLatitude = searchParams.get("searchLatitude");
+  const searchLongitude = searchParams.get("searchLongitude");
+
+  if (searchLatitude !== null || searchLongitude !== null) {
+    if (!searchLatitude?.trim() || !searchLongitude?.trim()) {
+      throw new SearchLocationValidationError();
+    }
+
+    const parsedInput = SearchLocationInputSchema.safeParse({
+      latitude: Number(searchLatitude),
+      longitude: Number(searchLongitude),
+      source: "device"
+    });
+
+    if (!parsedInput.success) {
+      throw new SearchLocationValidationError();
+    }
+
+    return parsedInput.data;
+  }
+
+  const searchQuery = searchParams.get("searchQuery");
+
+  if (searchQuery !== null) {
+    const parsedInput = SearchLocationInputSchema.safeParse({
+      query: searchQuery,
+      source: "typed"
+    });
+
+    if (!parsedInput.success) {
+      throw new SearchLocationValidationError();
+    }
+
+    return parsedInput.data;
+  }
+
+  return null;
 }
 
 class InMemoryRateLimiter implements RateLimiter {

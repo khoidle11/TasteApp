@@ -40,6 +40,10 @@ _Avoid_: Mall restaurant, food court listing
 A Location with latitude and longitude coordinates resolved from its address or user input. Geocoded Locations support distance filters and Convenience Mode.
 _Avoid_: Map pin, coordinates
 
+**Search Location**:
+A user-provided location used to calculate distance labels and filters for discovery. MVP Search Locations may come from device location permission or typed search input, but they are not stored Restaurant Locations.
+_Avoid_: User location, current location, address
+
 **Chain Candidate**:
 A Restaurant with multiple Locations within a 50-mile radius. Chain Candidates should be flagged for review or special handling because Menu Items, prices, availability, and food quality may vary by Location, but the chain should not be listed as duplicate Restaurants.
 _Avoid_: Chain, franchise
