@@ -144,6 +144,7 @@ Before running Prisma-backed commands or authenticated account flows, load the v
 - `TEST_DATABASE_URL` for the Docker-backed integration-test database.
 - `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` when exercising Clerk-backed account flows in the API, web shell, or mobile shell.
 - `EXPO_PUBLIC_TASTEAPP_API_URL` when pointing the Expo mobile shell at the local API started by `pnpm --filter @tasteapp/api dev`.
+- `GOOGLE_MAPS_GEOCODING_API_KEY` when exercising typed `Search Location` fallback for list-first distance labels; device-coordinate searches can run without it.
 
 Setup:
 
