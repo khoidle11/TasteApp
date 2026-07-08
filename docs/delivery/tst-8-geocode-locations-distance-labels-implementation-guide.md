@@ -56,7 +56,9 @@ Cache entries should be reused for repeated identical lookups. They should not e
 
 Use a provider-neutral application service or port so API transport and domain/application code do not depend directly on one geocoding vendor.
 
-Provider lookup failures should not block Restaurant and Location submission. For public discovery, Locations without coordinates can still appear in food-quality lists, but they should not show distance labels or participate in distance filtering until geocoded.
+Provider lookup failures should not block Restaurant and Location submission or public discovery. For public discovery, Locations without coordinates can still appear in food-quality lists, but they should not show distance labels or participate in distance filtering until geocoded.
+
+Typed Search Location geocoding should be treated as an optional enrichment. Provider timeouts, HTTP failures, malformed provider responses, bad API keys, quota errors, or JSON parsing failures should be logged internally and degrade to list results without distance labels.
 
 ## Device Location And Typed Fallback
 
@@ -98,13 +100,15 @@ The API transport should:
 - call an application service for geocoding and distance-label view models,
 - keep provider-specific errors out of public DTOs,
 - avoid putting distance math or provider calls directly in route handlers.
+- rate-limit typed Search Location geocoding before a cache miss can trigger a billed provider request.
 
-The first public API surface is `GET /v1/catalog/restaurants`. It may accept `searchLatitude` and `searchLongitude` for device-coordinate Search Locations, or `searchQuery` for typed Search Location fallback when a geocoding provider is configured behind the application seam.
+The first public API surface is `GET /v1/catalog/restaurants`. It may accept `searchLatitude` and `searchLongitude` for device-coordinate Search Locations, or `searchQuery` for typed Search Location fallback when a geocoding provider is configured behind the application seam. Coordinate query params must use the same latitude and longitude bounds as the shared Search Location contract.
 
 The application service should:
 
 - resolve or reuse geocoding cache entries,
 - attach coordinates to trusted Locations when appropriate,
+- handle typed geocoding failures by logging internally and returning the Restaurant list without distance labels,
 - calculate straight-line distances from a Search Location,
 - return list-first DTOs with distance labels and food-quality rank context.
 
