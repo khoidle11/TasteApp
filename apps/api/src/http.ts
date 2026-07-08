@@ -2,7 +2,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import {
   CatalogSubmissionConfirmationSchema,
-  CurrentTasteAppUserResponseSchema
+  CurrentTasteAppUserResponseSchema,
+  PublicCatalogRestaurantListResponseSchema
 } from "@tasteapp/contracts";
 
 import {
@@ -17,8 +18,16 @@ import {
   type AuthenticatedRequestContext,
   type TasteAppUserRepository
 } from "./identity.js";
+import {
+  geocodeSearchLocation,
+  withDistanceLabels,
+  type GeocodingCacheRepository,
+  type GeocodingProvider
+} from "./location-discovery.js";
+import { createGoogleGeocodingProviderFromEnvironment } from "./google-geocoding-provider.js";
 import { prismaTasteAppUserRepository } from "./prisma-tasteapp-user-repository.js";
 import { prismaCatalogSubmissionRepository } from "./prisma-catalog-submission-repository.js";
+import { prismaGeocodingCacheRepository } from "./prisma-location-discovery-repository.js";
 
 type JsonResponse = {
   body: unknown;
@@ -30,6 +39,8 @@ type RouteRequestOptions = {
   authContext?: AuthenticatedRequestContext;
   body?: unknown;
   catalogSubmissionRepository?: CatalogSubmissionRepository;
+  geocodingCacheRepository?: GeocodingCacheRepository;
+  geocodingProvider?: GeocodingProvider;
   logger?: Pick<Console, "error">;
   rateLimiter?: RateLimiter;
 };
@@ -53,9 +64,11 @@ type RateLimiter = {
 };
 
 const maxJsonBodyBytes = 64 * 1024;
+const publicCatalogRestaurantsPath = "/v1/catalog/restaurants";
 const catalogSubmissionPath = "/v1/catalog/submissions";
 const catalogSubmissionRateLimit = 10;
 const catalogSubmissionRateLimitWindowMs = 60 * 1000;
+const googleGeocodingProvider = createGoogleGeocodingProviderFromEnvironment();
 
 export async function routeRequest(
   method: string | undefined,
@@ -64,22 +77,23 @@ export async function routeRequest(
 ): Promise<JsonResponse> {
   const logger = options.logger ?? console;
   const rateLimiter = options.rateLimiter ?? inMemoryRateLimiter;
+  const parsedUrl = parseRequestUrl(url);
 
-  if (method === "GET" && url === "/health") {
+  if (method === "GET" && parsedUrl.pathname === "/health") {
     return {
       body: getHealthResponse(),
       statusCode: 200
     };
   }
 
-  if (method === "GET" && url === "/health/ready") {
+  if (method === "GET" && parsedUrl.pathname === "/health/ready") {
     return {
       body: getReadinessResponse(),
       statusCode: 200
     };
   }
 
-  if (method === "GET" && url === "/account/me") {
+  if (method === "GET" && parsedUrl.pathname === "/account/me") {
     if (options.authContext) {
       try {
         const user = await resolveCurrentTasteAppUser(
@@ -113,7 +127,31 @@ export async function routeRequest(
     };
   }
 
-  if (method === "POST" && url === catalogSubmissionPath) {
+  if (method === "GET" && parsedUrl.pathname === publicCatalogRestaurantsPath) {
+    const restaurants = await (
+      options.catalogSubmissionRepository ?? prismaCatalogSubmissionRepository
+    ).listPublicRestaurants();
+    const searchLocation = await searchLocationFromQuery(parsedUrl.searchParams, options);
+    const responseRestaurants = searchLocation
+      ? withDistanceLabels(
+          searchLocation,
+          restaurants.map((restaurant, index) => ({
+            ...restaurant,
+            foodQualityRank: index + 1,
+            restaurantDishId: restaurant.id
+          }))
+        )
+      : restaurants;
+
+    return {
+      body: PublicCatalogRestaurantListResponseSchema.parse({
+        restaurants: responseRestaurants
+      }),
+      statusCode: 200
+    };
+  }
+
+  if (method === "POST" && parsedUrl.pathname === catalogSubmissionPath) {
     if (!options.authContext) {
       return {
         body: {
@@ -234,9 +272,11 @@ async function handleRequestAsync(
 }
 
 function requiresAuthContext(method: string | undefined, url: string | undefined): boolean {
+  const parsedUrl = parseRequestUrl(url);
+
   return (
-    (method === "GET" && url === "/account/me") ||
-    (method === "POST" && url === catalogSubmissionPath)
+    (method === "GET" && parsedUrl.pathname === "/account/me") ||
+    (method === "POST" && parsedUrl.pathname === catalogSubmissionPath)
   );
 }
 
@@ -275,6 +315,38 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
 
 function catalogSubmissionRateLimitKey(authContext: AuthenticatedRequestContext): string {
   return `catalog-submissions:${authContext.provider}:${authContext.providerSubject}`;
+}
+
+function parseRequestUrl(url: string | undefined): URL {
+  return new URL(url ?? "/", "http://tasteapp.local");
+}
+
+function searchLocationFromQuery(
+  searchParams: URLSearchParams,
+  options: RouteRequestOptions
+): Promise<{ latitude: number; longitude: number } | null> {
+  const searchLatitude = searchParams.get("searchLatitude");
+  const searchLongitude = searchParams.get("searchLongitude");
+
+  if (searchLatitude !== null && searchLongitude !== null) {
+    const latitude = Number(searchLatitude);
+    const longitude = Number(searchLongitude);
+
+    return Promise.resolve(
+      Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null
+    );
+  }
+
+  const searchQuery = searchParams.get("searchQuery");
+  const geocodingProvider = options.geocodingProvider ?? googleGeocodingProvider;
+  const geocodingCacheRepository =
+    options.geocodingCacheRepository ?? prismaGeocodingCacheRepository;
+
+  if (searchQuery && geocodingProvider) {
+    return geocodeSearchLocation(searchQuery, geocodingProvider, geocodingCacheRepository);
+  }
+
+  return Promise.resolve(null);
 }
 
 class InMemoryRateLimiter implements RateLimiter {

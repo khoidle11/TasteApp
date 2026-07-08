@@ -79,6 +79,8 @@ model Location {
   kind                      LocationKind
   displayName               String
   address                   String?
+  latitude                  Float?
+  longitude                 Float?
   googleMapsUrl             String?
   websiteUrl                String?
   serviceArea               String?
@@ -94,4 +96,20 @@ model Location {
   @@index([verificationState])
   @@index([submittedByTasteAppUserId])
   @@map("locations")
+}
+
+model GeocodingCacheEntry {
+  id              String   @id @default(uuid()) @db.Uuid
+  providerId      String
+  normalizedQuery String
+  displayLabel    String
+  latitude        Float
+  longitude       Float
+  providerPlaceId String?
+  providerPayload Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([providerId, normalizedQuery])
+  @@map("geocoding_cache_entries")
 }
