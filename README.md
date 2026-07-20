@@ -210,7 +210,7 @@ docker compose down
 Local migration creation should happen from a feature branch:
 
 ```bash
-pnpm run db:migrate -- --name <migration-name>
+pnpm exec prisma migrate dev --schema prisma/schema.prisma --name <migration-name>
 pnpm run db:generate
 ```
 
