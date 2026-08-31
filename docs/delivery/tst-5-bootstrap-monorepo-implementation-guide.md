@@ -142,7 +142,7 @@ API, web, and mobile app shells exist and can run a basic health/smoke path:
 Shared TypeScript tooling is configured without forcing domain logic into a shared package:
 
 - Shared config lives in `packages/tsconfig`.
-- Shared runtime contract package contains only the health contract for now.
+- Shared runtime contract package contains the current cross-app contracts for health, account, catalog submissions, location discovery, and public catalog responses.
 - No domain model, ranking, review, or catalog behavior appears in shared packages.
 
 CI-ready scripts exist for linting, type checking, and tests:
